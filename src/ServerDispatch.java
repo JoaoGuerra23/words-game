@@ -4,22 +4,22 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+public class ServerDispatch {
 
-public class ChatServer {
-
-    private LinkedList<ClientConnection> clientConnections;
+    private LinkedList<Client> clients;
     private ExecutorService fixedPool;
     private ServerSocket serverSocket;
-    private ClientConnection clientConnection;
+    private Client client;
     private int nThreads;
     private final int port;
     private Grid grid;
+    private String msg;
 
-    public ChatServer(int port, int nThreads) {
+    public ServerDispatch(int port, int nThreads) {
 
             this.nThreads = nThreads;
             this.port = port;
-            clientConnections = new LinkedList<>();
+            clients = new LinkedList<>();
             fixedPool = Executors.newFixedThreadPool(nThreads);
             this.grid = new Grid(5, 10);
 
@@ -34,28 +34,31 @@ public class ChatServer {
         }
     }
 
-    public void init() {
+    public void init() throws IOException {
 
-        try {
+        //Must have all the players connected to start the game
+        while (clients.size() < nThreads) {
 
-            while (clientConnections.size() < nThreads) {
+            client = new Client(serverSocket.accept(), this, this.grid);
+            clients.add(client);
 
-                clientConnection = new ClientConnection(serverSocket.accept(), this, this.grid);
-                clientConnections.add(clientConnection);
+            fixedPool.submit(client);
+            System.out.println("Connections: " + clients.size());
+        }
+        //Starts the Game
+        start();
+    }
 
-                fixedPool.submit(clientConnection);
-                System.out.println("Connections: " + clientConnections.size());
+    public void start() {
+        synchronized (this) {
+
+            System.out.println("ServerDisatch --> start()"); //TODO:APAGAR
+
+            while(!checkIfAllReady()){
+                //empty on purpose//TODO:APAGAR
             }
 
-
-
-            start();
-
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-
+            briefSummary();
         }
 
     }
@@ -64,34 +67,19 @@ public class ChatServer {
 
         int counter = 0;
 
-        for (ClientConnection client : clientConnections) {
+        for (Client client : clients) {
 
             if (client.getIsReady()) {
-                //System.out.println(client.getUsername() + " is ready to go!");
                 counter++;
             }
         }
 
-        if (counter == clientConnections.size()) {
+        if (counter == clients.size()) {
 
-            sendAll("All players are now ready to play. Starting the game.\n");//TODO: remove later
             return true;
+
         }
         return false;
-    }
-
-    public void start() {
-        synchronized (this) {
-
-            System.out.println("Tamos aqui de novo.... no Start");
-
-            while(!checkIfAllReady()){//TODO: apaga esta merda
-              //System.out.println("tamos aqui");
-            }
-
-            briefSummary();
-        }
-
     }
 
     private void briefSummary() {
@@ -141,51 +129,46 @@ public class ChatServer {
         //Create the Matrix and send it to every1
         sendAll(String.valueOf(grid.drawMatrix()));
 
+        sendAll("Chose and type a word from the given Matrix: ");
+
     }
 
     public void playGame(String msg){
         synchronized (this) {
-            while(!grid.gameFinishChecker()){
 
-                if(msg.equals("") ){
-                    continue;
-                }
+            //Check player Input
+            checkPlayersInput(msg);
 
-                checkPlayersInput(msg);
+            //Redraw the Matrix
+            System.out.println("Redrawing");
+            sendAll(String.valueOf(grid.drawMatrix()));
 
-                System.out.println("Trying to redraw the matrix");
-
-                //TODO: Clear the console here
-                grid.drawMatrix();
-                grid.showPlayerScore();
-
-            }
-            sendAll("Chose and type a word from the given Matrix: ");
-            //checkPlayersInput(receiveAll());
+            //Show Player Score
+            grid.showPlayerScore();
         }
     }
 
     public void sendAll(String message) {
 
-        for (ClientConnection clientConnection : clientConnections) {
+        for (Client client : clients) {
 
-            clientConnection.send(message);
+            client.send(message);
 
         }
     }
 
     public void sendRulesToAll(String message) {
 
-        for (ClientConnection clientConnection : clientConnections) {
+        for (Client client : clients) {
 
-            clientConnection.sendRules(message);
+            client.sendRules(message);
 
         }
     }
 
-    public String receivePlayerMessage(String msg){
+    public void receivePlayerMessage(String msg){
         synchronized (this) {
-            return msg;
+            playGame(msg);
         }
     }
 
