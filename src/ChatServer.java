@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 public class ChatServer {
 
     private LinkedList<ClientConnection> clientConnections;
@@ -20,6 +21,7 @@ public class ChatServer {
             this.port = port;
             clientConnections = new LinkedList<>();
             fixedPool = Executors.newFixedThreadPool(nThreads);
+            this.grid = new Grid(5, 10);
 
         try {
 
@@ -38,14 +40,14 @@ public class ChatServer {
 
             while (clientConnections.size() < nThreads) {
 
-                clientConnection = new ClientConnection(serverSocket.accept(), this);
+                clientConnection = new ClientConnection(serverSocket.accept(), this, this.grid);
                 clientConnections.add(clientConnection);
 
                 fixedPool.submit(clientConnection);
                 System.out.println("Connections: " + clientConnections.size());
             }
 
-            System.out.println("Checking now");
+
 
             start();
 
@@ -65,7 +67,7 @@ public class ChatServer {
         for (ClientConnection client : clientConnections) {
 
             if (client.getIsReady()) {
-                System.out.println(client.getUsername() + " is ready to go!");
+                //System.out.println(client.getUsername() + " is ready to go!");
                 counter++;
             }
         }
@@ -74,19 +76,21 @@ public class ChatServer {
 
             sendAll("All players are now ready to play. Starting the game.\n");//TODO: remove later
             return true;
-
-
         }
         return false;
     }
 
     public void start() {
+        synchronized (this) {
 
-        while(!checkIfAllReady()){
-            System.out.println("tamos aqui"); //TODO: apaga esta merda
+            System.out.println("Tamos aqui de novo.... no Start");
+
+            while(!checkIfAllReady()){//TODO: apaga esta merda
+              //System.out.println("tamos aqui");
+            }
+
+            briefSummary();
         }
-
-        briefSummary();
 
     }
 
@@ -127,39 +131,38 @@ public class ChatServer {
         sendAll("");
 
         drawGame();
-
-
     }
 
     private void drawGame() {
 
-        System.out.println("Drawing the Game");
-        System.out.println("Trying to notify ALL:");
+        //Create the words:
+        grid.setWordsForMatrix();
 
-        notifyAllThreads();
-
-        System.out.println("Notified ALL");
-        //Creates the GRID and sends it to every1;
-        grid = new Grid(5, 10);
-
+        //Create the Matrix and send it to every1
         sendAll(String.valueOf(grid.drawMatrix()));
-
-        playGame();
 
     }
 
-    private void playGame(){
+    public void playGame(String msg){
+        synchronized (this) {
+            while(!grid.gameFinishChecker()){
 
-        while(true){
+                if(msg.equals("") ){
+                    continue;
+                }
 
+                checkPlayersInput(msg);
+
+                System.out.println("Trying to redraw the matrix");
+
+                //TODO: Clear the console here
+                grid.drawMatrix();
+                grid.showPlayerScore();
+
+            }
             sendAll("Chose and type a word from the given Matrix: ");
-
-            checkPlayersInput(receiveAll());
-
-
-
+            //checkPlayersInput(receiveAll());
         }
-
     }
 
     public void sendAll(String message) {
@@ -180,36 +183,16 @@ public class ChatServer {
         }
     }
 
-    public String receiveAll(){
-
-        String msg = "";
-
-        for (ClientConnection clientConnection : clientConnections) {
-
-            msg = clientConnection.getMsg();
-
+    public String receivePlayerMessage(String msg){
+        synchronized (this) {
+            return msg;
         }
-
-        return msg;
     }
 
     public void checkPlayersInput(String str){
 
-        for (ClientConnection clientConnection : clientConnections) {
-
+        synchronized (this) {
             grid.checkPlayerInput(str);
-
         }
     }
-
-    public void notifyAllThreads(){
-
-        for (ClientConnection clientConnection : clientConnections) {
-
-            clientConnection.notifyMe();
-
-        }
-
-    }
-
 }

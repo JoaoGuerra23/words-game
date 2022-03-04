@@ -5,7 +5,7 @@ public class Grid {
 
     //PROPRIEDADES DA CLASSE
     private Prompt prompt = new Prompt(System.in, System.out);
-    private String[][] wordMatrix;
+    private static String[][] wordMatrix;
     private StringInputScanner inputScanner;
     private String lastTypedWord;
 
@@ -100,14 +100,21 @@ public class Grid {
     //Check Player Input and Compare it with the List
     public void checkPlayerInput(String str) {
 
+        System.out.println("Inside checkPlayerInput");
+
         for (int i = 0; i < wordMatrix.length; i++) {
             for (int j = 0; j < wordMatrix[i].length; j++) {
 
+                System.out.println(str);
+
                 //Remove the blank spaces of the word:
                 String trimmedWord = wordMatrix[i][j].trim();
-
+                //System.out.println("Inside checkPlayerInput2"); TODO: apagar
                 //If word equals to player input:
                 if (str.equals(trimmedWord)) {
+
+                    System.out.println("Inside checkPlayerInput3");
+
                     playerScore += trimmedWord.length();
                     wordMatrix[i][j] = "          ";
                 }
@@ -129,14 +136,14 @@ public class Grid {
                     countBlankSpaces++;
                     if (countBlankSpaces == wordMatrix.length * cols) {
                         System.out.println("THERE ARE NO MORE WORDS! GAME FINISHED!");
-                        return false;
+                        return true;
                     }
 
                 }
             }
         }
         countBlankSpaces = 0;
-        return true;
+        return false;
     }
 
 }

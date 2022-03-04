@@ -19,6 +19,7 @@ public class ClientConnection implements Runnable {
     private PrintStream printStream;
     private boolean isReady;
     private String msg;
+    private Grid grid;
 
     public String getMsg() {
         return msg;
@@ -26,15 +27,15 @@ public class ClientConnection implements Runnable {
 
     private String username;
 
-    public ClientConnection(Socket socket, ChatServer chatServer) {
+    public ClientConnection(Socket socket, ChatServer chatServer, Grid grid) {
         this.socket = socket;
         this.chatServer = chatServer;
+        this.grid = grid;
     }
 
     public void send(String str) {
-        synchronized (this) {
-            out.println(str);
-        }
+        out.println(str);
+
     }
 
     public void sendRules(String str) {
@@ -80,64 +81,29 @@ public class ClientConnection implements Runnable {
 
             Prompt prompt = new Prompt(socket.getInputStream(), printStream);
             StringInputScanner question = new StringInputScanner();
+
             question.setMessage("What is your Name?");
+
             username = prompt.getUserInput(question).toUpperCase();
+            msg = in.readLine();
 
+            checkMsg(msg); //blocking
 
-            while (true) {
-                System.out.println("HERE123");
-                // read something from the client
-                try {
-                    msg = in.readLine();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                // send to all the other connections
-                chatServer.sendAll(username + ": " + msg); //Todo Take this out from here
-                checkMsg(msg);
+            while(true){
+                chatServer.playGame(msg);
             }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void notifyMe() {
-
-        System.out.println("Notifying in client");
-        synchronized (this) {
-            notifyAll();
-        }
-
-        System.out.println("All notified");
-
-    }
-
     private void checkMsg(String msg) {
-
 
         if (msg.equals("/start")) {
 
-            chatServer.sendAll("Waiting for all player to start the game");
-
             setReady(true);
 
-            System.out.println(username + " is ready to play.");
-
-            try {
-
-                System.out.println("Player waiting.");
-                synchronized (this) {
-                    wait();
-                }
-                if (chatServer.checkIfAllReady()) {
-                    chatServer.start();
-                }
-
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
         }
-        //reset the message so it wont loop back here.
-        msg = "";
     }
 }
