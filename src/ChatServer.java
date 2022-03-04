@@ -17,8 +17,9 @@ public class ChatServer {
     private LinkedList<ClientConnection> clientConnections;
     private ExecutorService fixedPool;
     private ServerSocket serverSocket;
+    private ClientConnection clientConnection;
     private int nThreads;
-    private int port;
+    private final int port;
 
     public ChatServer(int port, int nThreads) {
         this.nThreads = nThreads;
@@ -34,19 +35,37 @@ public class ChatServer {
 
     }
 
+
+    public void checkIfAllReady() {
+
+            int counter = 0;
+
+            for (ClientConnection client : clientConnections) {
+
+                if (client.getIsReady()) {
+                    counter++;
+                }
+            }
+
+            if (counter == clientConnections.size()) {
+
+                start();
+
+            }
+    }
+
     public void init() {
 
         try {
 
 
-
             while (true) {
 
-                ClientConnection clientConnection = new ClientConnection(serverSocket.accept(), this);
+                clientConnection = new ClientConnection(serverSocket.accept(), this);
 
                 clientConnections.add(clientConnection);
 
-                if(clientConnections.size() > nThreads){
+                if (clientConnections.size() > nThreads) {
                     System.out.println("Too many Connections");
                     fixedPool.shutdown();
                 }
@@ -54,15 +73,30 @@ public class ChatServer {
                 fixedPool.submit(clientConnection);
                 System.out.println("Connections: " + clientConnections.size());
 
-
+                System.out.println(clientConnection.getIsReady());
 
             }
 
         } catch (IOException e) {
+
             e.printStackTrace();
 
         }
+
     }
+
+    private void start() {
+
+        briefSummary();
+
+    }
+
+    private void briefSummary() {
+
+        clientConnection.send("Lorem Ipsum is simply dummy text of the printing and typesetting industry.\nJust a Description");
+
+    }
+
 
     public void sendAll(String message) {
 
@@ -74,11 +108,4 @@ public class ChatServer {
 
     }
 
-
-    public static void main(String[] args) {
-
-        ChatServer chatServer = new ChatServer(3000, 2);
-        chatServer.init();
-
-    }
 }

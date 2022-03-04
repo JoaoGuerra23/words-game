@@ -17,6 +17,8 @@ public class ClientConnection implements Runnable {
     private BufferedReader in;
     private ChatServer chatServer;
     private PrintStream printStream;
+    private boolean isReady;
+    private String msg;
 
     public ClientConnection(Socket socket, ChatServer chatServer) {
         this.socket = socket;
@@ -27,7 +29,13 @@ public class ClientConnection implements Runnable {
         out.println(str);
     }
 
+    public boolean getIsReady(){
+        return isReady;
+    }
 
+    public void setReady(boolean ready) {
+        isReady = ready;
+    }
 
     @Override
     public void run() {
@@ -50,18 +58,26 @@ public class ClientConnection implements Runnable {
             Prompt prompt = new Prompt(socket.getInputStream(), printStream);
             StringInputScanner question = new StringInputScanner();
             question.setMessage("What is your Name?");
-            String username = prompt.getUserInput(question).toUpperCase(Locale.ROOT);
+            String username = prompt.getUserInput(question).toUpperCase();
 
 
             while (true) {
 
                 // read something from the client
-                String msg = in.readLine();
+                msg = in.readLine();
                 // send to all the other connections
                 chatServer.sendAll(username + ": " + msg);
 
-
-
+                if(msg.equals("/start")){
+                    chatServer.sendAll("Waiting for all player to start the game");
+                    setReady(true);
+                    chatServer.checkIfAllReady();
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
 
 
