@@ -36,26 +36,26 @@ public class ChatServer {
 
         try {
 
-            while (true) {
+            while (clientConnections.size() < nThreads) {
 
                 clientConnection = new ClientConnection(serverSocket.accept(), this);
                 clientConnections.add(clientConnection);
 
-                if (clientConnections.size() > nThreads) {
-                    System.out.println("Too many Connections");
-                    fixedPool.shutdown();
-                }
-
                 fixedPool.submit(clientConnection);
                 System.out.println("Connections: " + clientConnections.size());
-
             }
+
+            System.out.println("Checking now");
+
+            start();
+
 
         } catch (IOException e) {
 
             e.printStackTrace();
 
         }
+
     }
 
     public boolean checkIfAllReady() {
@@ -82,10 +82,13 @@ public class ChatServer {
 
     public void start() {
 
+        while(!checkIfAllReady()){
+            System.out.println("tamos aqui"); //TODO: apaga esta merda
+        }
+
         briefSummary();
 
     }
-
 
     private void briefSummary() {
 

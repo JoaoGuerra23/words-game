@@ -32,7 +32,7 @@ public class ClientConnection implements Runnable {
     }
 
     public void send(String str) {
-        synchronized (this){
+        synchronized (this) {
             out.println(str);
         }
     }
@@ -96,22 +96,24 @@ public class ClientConnection implements Runnable {
                 chatServer.sendAll(username + ": " + msg); //Todo Take this out from here
                 checkMsg(msg);
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void notifyMe(){
+    public void notifyMe() {
 
         System.out.println("Notifying in client");
-
-        notifyAll();
+        synchronized (this) {
+            notifyAll();
+        }
 
         System.out.println("All notified");
 
     }
 
     private void checkMsg(String msg) {
+
 
         if (msg.equals("/start")) {
 
@@ -123,9 +125,11 @@ public class ClientConnection implements Runnable {
 
             try {
 
-                wait();
-
-                if(chatServer.checkIfAllReady()){
+                System.out.println("Player waiting.");
+                synchronized (this) {
+                    wait();
+                }
+                if (chatServer.checkIfAllReady()) {
                     chatServer.start();
                 }
 
@@ -134,7 +138,6 @@ public class ClientConnection implements Runnable {
             }
         }
         //reset the message so it wont loop back here.
-        msg ="";
-
+        msg = "";
     }
 }
