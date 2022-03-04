@@ -19,6 +19,11 @@ public class ClientConnection implements Runnable {
     private PrintStream printStream;
     private boolean isReady;
     private String msg;
+
+    public String getMsg() {
+        return msg;
+    }
+
     private String username;
 
     public ClientConnection(Socket socket, ChatServer chatServer) {

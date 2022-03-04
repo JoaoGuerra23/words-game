@@ -12,6 +12,7 @@ public class ChatServer {
     private ClientConnection clientConnection;
     private int nThreads;
     private final int port;
+    private Grid grid;
 
     public ChatServer(int port, int nThreads) {
         this.nThreads = nThreads;
@@ -128,12 +129,17 @@ public class ChatServer {
 
     private void drawGame() {
 
+        grid = new Grid(5, 10);
+        grid.drawMatrix();
+
     }
 
 
     public void sendAll(String message) {
 
+
         for (ClientConnection clientConnection : clientConnections) {
+
 
             clientConnection.send(message);
 
