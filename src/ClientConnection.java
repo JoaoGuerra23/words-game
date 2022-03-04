@@ -19,6 +19,7 @@ public class ClientConnection implements Runnable {
     private PrintStream printStream;
     private boolean isReady;
     private String msg;
+    private String username;
 
     public ClientConnection(Socket socket, ChatServer chatServer) {
         this.socket = socket;
@@ -29,12 +30,21 @@ public class ClientConnection implements Runnable {
         out.println(str);
     }
 
+    public void sendRules(String str){
+        out.print(str + " ");
+        out.flush();
+    }
+
     public boolean getIsReady(){
         return isReady;
     }
 
     public void setReady(boolean ready) {
         isReady = ready;
+    }
+
+    public String getUsername(){
+        return username;
     }
 
     @Override
@@ -52,13 +62,13 @@ public class ClientConnection implements Runnable {
                     "   \\ \\/  \\/ /  |  __|  | |     | |    | |    | |  | || |\\/| ||  __|  | || |\n" +
                     "    \\  /\\  /   | |____ | |____ | |____| |____| |__| || |  | || |____ |_||_|\n" +
                     "     \\/  \\/    |______||______||______|\\_____|\\____/ |_|  |_||______|(_)(_)\n" +
-                    "                                                                           \n" +
+                    "                           Type /start to START the game                   \n" +
                     "                                                                           ");
 
             Prompt prompt = new Prompt(socket.getInputStream(), printStream);
             StringInputScanner question = new StringInputScanner();
             question.setMessage("What is your Name?");
-            String username = prompt.getUserInput(question).toUpperCase();
+            username = prompt.getUserInput(question).toUpperCase();
 
 
             while (true) {
@@ -71,6 +81,7 @@ public class ClientConnection implements Runnable {
                 if(msg.equals("/start")){
                     chatServer.sendAll("Waiting for all player to start the game");
                     setReady(true);
+                    System.out.println(username + " is ready to play.");
                     chatServer.checkIfAllReady();
                     try {
                         wait();
