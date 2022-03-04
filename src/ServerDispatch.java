@@ -19,8 +19,8 @@ public class ServerDispatch {
 
             this.nThreads = nThreads;
             this.port = port;
-            clients = new LinkedList<>();
-            fixedPool = Executors.newFixedThreadPool(nThreads);
+            this.clients = new LinkedList<>();
+            this.fixedPool = Executors.newFixedThreadPool(nThreads);
             this.grid = new Grid(5, 10);
 
         try {
@@ -28,9 +28,7 @@ public class ServerDispatch {
             serverSocket = new ServerSocket(port);
 
         } catch (IOException e) {
-
             e.printStackTrace();
-
         }
     }
 
@@ -126,9 +124,8 @@ public class ServerDispatch {
         //Create the words:
         grid.setWordsForMatrix();
 
-        //Create the Matrix and send it to every1
+        //ReDraw the Matrix and send it to every1 again
         sendAll(String.valueOf(grid.drawMatrix()));
-
         sendAll("Chose and type a word from the given Matrix: ");
 
     }
@@ -146,6 +143,7 @@ public class ServerDispatch {
             //Show Player Score
             grid.showPlayerScore();
         }
+        sendAll("Chose and type a word from the given Matrix: ");
     }
 
     public void sendAll(String message) {
