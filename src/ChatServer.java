@@ -15,51 +15,30 @@ public class ChatServer {
     private Grid grid;
 
     public ChatServer(int port, int nThreads) {
-        this.nThreads = nThreads;
-        this.port = port;
-        clientConnections = new LinkedList<>();
-        fixedPool = Executors.newFixedThreadPool(nThreads);
+
+            this.nThreads = nThreads;
+            this.port = port;
+            clientConnections = new LinkedList<>();
+            fixedPool = Executors.newFixedThreadPool(nThreads);
 
         try {
+
             serverSocket = new ServerSocket(port);
+
         } catch (IOException e) {
+
             e.printStackTrace();
-        }
-
-    }
-
-
-    public void checkIfAllReady() {
-
-        int counter = 0;
-
-        for (ClientConnection client : clientConnections) {
-
-            if (client.getIsReady()) {
-                System.out.println(client.getUsername() + " is ready to go!");
-                counter++;
-            }
-        }
-
-        if (counter == clientConnections.size()) {
-
-            sendAll("All players are now ready to play. Starting the game.\n");//TODO: remove later
-
-            start();
 
         }
     }
-
 
     public void init() {
 
         try {
 
-
             while (true) {
 
                 clientConnection = new ClientConnection(serverSocket.accept(), this);
-
                 clientConnections.add(clientConnection);
 
                 if (clientConnections.size() > nThreads) {
@@ -77,10 +56,31 @@ public class ChatServer {
             e.printStackTrace();
 
         }
-
     }
 
-    private void start() {
+    public boolean checkIfAllReady() {
+
+        int counter = 0;
+
+        for (ClientConnection client : clientConnections) {
+
+            if (client.getIsReady()) {
+                System.out.println(client.getUsername() + " is ready to go!");
+                counter++;
+            }
+        }
+
+        if (counter == clientConnections.size()) {
+
+            sendAll("All players are now ready to play. Starting the game.\n");//TODO: remove later
+            return true;
+
+
+        }
+        return false;
+    }
+
+    public void start() {
 
         briefSummary();
 
@@ -110,9 +110,10 @@ public class ChatServer {
                 "    \\_/dc__________________________/.");
 
         sendRulesToAll("Starting the game in: ");
+
         for (int i = 10; i >= 0; i--) {
             try {
-                Thread.sleep(1500);
+                Thread.sleep(0); //TODO Change me
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -129,23 +130,43 @@ public class ChatServer {
 
     private void drawGame() {
 
+        System.out.println("Drawing the Game");
+        System.out.println("Trying to notify ALL:");
+
+        notifyAllThreads();
+
+        System.out.println("Notified ALL");
+        //Creates the GRID and sends it to every1;
         grid = new Grid(5, 10);
-        grid.drawMatrix();
+
+        sendAll(String.valueOf(grid.drawMatrix()));
+
+        playGame();
 
     }
 
+    private void playGame(){
+
+        while(true){
+
+            sendAll("Chose and type a word from the given Matrix: ");
+
+            checkPlayersInput(receiveAll());
+
+
+
+        }
+
+    }
 
     public void sendAll(String message) {
 
-
         for (ClientConnection clientConnection : clientConnections) {
-
 
             clientConnection.send(message);
 
         }
     }
-
 
     public void sendRulesToAll(String message) {
 
@@ -154,8 +175,38 @@ public class ChatServer {
             clientConnection.sendRules(message);
 
         }
-
     }
 
+    public String receiveAll(){
+
+        String msg = "";
+
+        for (ClientConnection clientConnection : clientConnections) {
+
+            msg = clientConnection.getMsg();
+
+        }
+
+        return msg;
+    }
+
+    public void checkPlayersInput(String str){
+
+        for (ClientConnection clientConnection : clientConnections) {
+
+            grid.checkPlayerInput(str);
+
+        }
+    }
+
+    public void notifyAllThreads(){
+
+        for (ClientConnection clientConnection : clientConnections) {
+
+            clientConnection.notifyMe();
+
+        }
+
+    }
 
 }

@@ -32,23 +32,31 @@ public class ClientConnection implements Runnable {
     }
 
     public void send(String str) {
-        out.println(str);
+        synchronized (this){
+            out.println(str);
+        }
     }
 
-    public void sendRules(String str){
-        out.print(str + " ");
-        out.flush();
+    public void sendRules(String str) {
+        synchronized (this) {
+            out.print(str + " ");
+            out.flush();
+        }
     }
 
-    public boolean getIsReady(){
-        return isReady;
+    public boolean getIsReady() {
+        synchronized (this) {
+            return isReady;
+        }
     }
 
     public void setReady(boolean ready) {
-        isReady = ready;
+        synchronized (this) {
+            isReady = ready;
+        }
     }
 
-    public String getUsername(){
+    public String getUsername() {
         return username;
     }
 
@@ -77,29 +85,56 @@ public class ClientConnection implements Runnable {
 
 
             while (true) {
-
+                System.out.println("HERE123");
                 // read something from the client
-                msg = in.readLine();
-                // send to all the other connections
-                chatServer.sendAll(username + ": " + msg);
-
-                if(msg.equals("/start")){
-                    chatServer.sendAll("Waiting for all player to start the game");
-                    setReady(true);
-                    System.out.println(username + " is ready to play.");
-                    chatServer.checkIfAllReady();
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                try {
+                    msg = in.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
+                // send to all the other connections
+                chatServer.sendAll(username + ": " + msg); //Todo Take this out from here
+                checkMsg(msg);
             }
-
-
-
-        } catch (IOException e) {
+        } catch (IOException e){
             e.printStackTrace();
         }
+    }
+
+    public void notifyMe(){
+
+        System.out.println("Notifying in client");
+
+        notifyAll();
+
+        System.out.println("All notified");
+
+    }
+
+    private void checkMsg(String msg) {
+
+        if (msg.equals("/start")) {
+
+            chatServer.sendAll("Waiting for all player to start the game");
+
+            setReady(true);
+
+            System.out.println(username + " is ready to play.");
+
+            try {
+
+                wait();
+
+                if(chatServer.checkIfAllReady()){
+                    chatServer.start();
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        //reset the message so it wont loop back here.
+        msg ="";
+
     }
 }
