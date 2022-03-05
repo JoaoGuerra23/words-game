@@ -74,36 +74,17 @@ public class Client implements Runnable {
                 if (getIsReady()) {
                     if (msg.equals("")) continue;
                     if (msg.equals("/start")) {
-                        setReady(true);
                         serverDispatch.sendPrivateWarning(("This command will not take effect now."), username);
+                        continue;
+                    } else if (msg.equals("/pm")) {
+                        sendPrivateMessage(prompt);
                         continue;
                     }
                     serverDispatch.receivePlayerMessage(msg, this);
                 } else {
                     if (msg.equals("/pm")) {
-
-                        String[] strArray = new String[serverDispatch.getClientList().size() - 1];
-
-                        for (int i = 0; i < serverDispatch.getClientList().size(); i++) {
-                            if (!serverDispatch.getClientList().get(i).getName().equals(username)) {
-                                strArray[i] = serverDispatch.getClientList().get(i).getName();
-                            }
-                        }
-
-
-                        MenuInputScanner scanner = new MenuInputScanner(strArray);
-                        scanner.setMessage("Users Available: ");
-
-                        int answerIndex = prompt.getUserInput(scanner);
-
-                        StringInputScanner personalMessage = new StringInputScanner();
-                        personalMessage.setMessage("Write your message to player:\n");
-                        String personalM = "(PM) " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
-                        serverDispatch.sendPrivateWarning(("PM sent."), username);
-
-                        serverDispatch.sendPrivateWarning(personalM, strArray[answerIndex - 1]);
+                        sendPrivateMessage(prompt);
                         continue;
-
                     }
                     if (msg.equals("/start")) {
                         serverDispatch.sendChatMessage((username + " typed /start to start the game!"), username);
@@ -124,6 +105,29 @@ public class Client implements Runnable {
             closeEverything();
         }
 
+    }
+
+    public void sendPrivateMessage(Prompt prompt){
+        String[] strArray = new String[serverDispatch.getClientList().size() - 1];
+
+        for (int i = 0; i < serverDispatch.getClientList().size(); i++) {
+            if (!serverDispatch.getClientList().get(i).getName().equals(username)) {
+                strArray[i] = serverDispatch.getClientList().get(i).getName();
+            }
+        }
+
+
+        MenuInputScanner scanner = new MenuInputScanner(strArray);
+        scanner.setMessage("Users Available: ");
+
+        int answerIndex = prompt.getUserInput(scanner);
+
+        StringInputScanner personalMessage = new StringInputScanner();
+        personalMessage.setMessage("Write your message to player:\n");
+        String personalM = "(PM) " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
+        serverDispatch.sendPrivateWarning(("PM sent."), username);
+
+        serverDispatch.sendPrivateWarning(personalM, strArray[answerIndex - 1]);
     }
 
     public void closeEverything() {
