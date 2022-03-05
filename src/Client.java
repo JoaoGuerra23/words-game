@@ -1,6 +1,5 @@
 import org.academiadecodigo.bootcamp.Prompt;
 import org.academiadecodigo.bootcamp.scanners.string.StringInputScanner;
-
 import java.io.*;
 import java.net.Socket;
 
@@ -26,14 +25,6 @@ public class Client implements Runnable {
 
     }
 
-    public void setScore(int score){
-        this.score += score;
-    }
-
-    public int getScore() {
-        return this.score;
-    }
-
     public void send(String str) {
         out.println(str);
     }
@@ -41,18 +32,6 @@ public class Client implements Runnable {
     public void sendRules(String str) {
             out.print(str + " ");
             out.flush();
-    }
-
-    public boolean getIsReady() {
-            return isReady;
-    }
-
-    public void setReady(boolean ready) {
-        isReady = ready;
-    }
-
-    public String getName() {
-        return this.username;
     }
 
     @Override
@@ -102,7 +81,7 @@ public class Client implements Runnable {
                     serverDispatch.receivePlayerMessage(msg, this);
                 } else {
                     if (msg.equals("/start")) {
-                        serverDispatch.sendChatMesage((username + " typed /start to start the game!"), username); //TODO: Put some color in this text to highlit it from the rest
+                        serverDispatch.sendChatMessage((username + " typed /start to start the game!"), username); //TODO: Put some color in this text to highlit it from the rest
                         setReady(true);
                         continue;
                     } else if(msg.equals("")){
@@ -111,20 +90,12 @@ public class Client implements Runnable {
                     }
 
                     System.out.println(Thread.currentThread().getId());
-                    serverDispatch.sendChatMesage((username + ": " + msg), username);
+                    serverDispatch.sendChatMessage((username + ": " + msg), username);
                 }
             }
         } catch (IOException ex) {
             closeEverything();
         }
-    }
-
-    public void setLives() {
-        this.lives --;
-    }
-
-    public int getLives() {
-        return this.lives;
     }
 
     public void closeEverything() {
@@ -139,5 +110,42 @@ public class Client implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Getters & Setters
+     */
+    public void setLives() {
+        this.lives --;
+    }
+
+    public void setScore(int score){
+        this.score += score;
+    }
+
+    public void setReady(boolean ready) {
+        isReady = ready;
+    }
+
+    public int getLives() {
+        return this.lives;
+    }
+
+    public Socket getSocket() {
+        synchronized (this) {
+            return this.socket;
+        }
+    }
+
+    public String getName() {
+        return this.username;
+    }
+
+    public boolean getIsReady() {
+        return isReady;
+    }
+
+    public int getScore() {
+        return this.score;
     }
 }

@@ -1,14 +1,21 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+
 public class Grid {
 
     private static String[][] wordMatrix;
     private int countBlankSpaces;
     private final int rows;
     private final int cols;
+    private static String PATH;
 
-    public Grid(int rows, int cols) {
+    public Grid(int rows, int cols, String filePath) {
 
         this.rows = rows;
         this.cols = cols;
+        this.PATH = filePath;
 
         wordMatrix = new String[this.rows][this.cols];
         countBlankSpaces = 0;
@@ -16,6 +23,31 @@ public class Grid {
 
     //Set Bi-Dimensional Array Keys and Values
     public void setWordsForMatrix() {
+
+       /* try { -> ACCEPTS 50 WORDS IN A TEXT FILE.
+            BufferedReader in = new BufferedReader(new FileReader(PATH));
+            StringBuilder sb = new StringBuilder();
+
+            for(int i = 0; i < rows; i++){
+                for(int j = 0; j < cols; j++){
+
+                    String word = in.readLine();
+                    int countSpaces = 10 - word.length();
+
+                    for(int k = 0; k < countSpaces; k++){
+
+                        word += String.valueOf(sb.append(" "));
+                        //reset sb buffer
+                        sb.delete(0, sb.length());
+                    }
+                    wordMatrix[i][j] = word;
+                }
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/ // TODO: -> It is fully working !!! Only applicable when we convert this to JAR. for tests, use the down list.
 
         wordMatrix[0][0] = "missile" + "   ";
         wordMatrix[0][1] = "damn" + "      ";
@@ -114,7 +146,7 @@ public class Grid {
     }
 
     //METODO PARA VERIFICAR SE AINDA EXISTEM PALAVRAS NA TABELA
-    public boolean gameFinishChecker() {
+    public boolean checkRemainingWords() {
 
         for (int i = 0; i < wordMatrix.length; i++) {
             for (int j = 0; j < wordMatrix[i].length; j++) {
@@ -131,5 +163,4 @@ public class Grid {
         countBlankSpaces = 0;
         return false;
     }
-
 }

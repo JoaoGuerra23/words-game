@@ -15,13 +15,13 @@ public class ServerDispatch {
     private Grid grid;
     private int playerCounter;
 
-    public ServerDispatch(int portNumber, int nThreads) {
+    public ServerDispatch(int portNumber, int nThreads, String filePath) {
 
             this.nThreads = nThreads;
             this.portNumber = portNumber;
             this.clients = new LinkedList<>();
             this.fixedPool = Executors.newFixedThreadPool(nThreads);
-            this.grid = new Grid(5, 10);
+            this.grid = new Grid(5, 10, filePath);
 
         try {
 
@@ -46,6 +46,10 @@ public class ServerDispatch {
         //Starts the Game
         start();
     }
+
+    /**
+     * Game Logics Start here:
+     */
 
     public void start() {
 
@@ -126,6 +130,7 @@ public class ServerDispatch {
         sendAll(String.valueOf(grid.drawMatrix()));
         sendAll("Chose and type a word from the given Matrix: ");
 
+        //Must be here. Cannot be in constructor, otherwise wont work.
         this.playerCounter = clients.size();
 
     }
@@ -143,25 +148,66 @@ public class ServerDispatch {
             //Get Player Score and Lives and Show it in Console
             sendPrivateWarning(("Lives: " + String.valueOf(client.getLives()) + " ~ Personal Score: " + String.valueOf(client.getScore())), client.getName());
 
-            //Check If there are still words available && if Player Lost && if only 1 player playing!
-            grid.gameFinishChecker();
+            //Check If there are still words available && if Player Lost && if only 1 player playing && if there is a Draw!
             if (client.getLives() == 0) {
                 sendPrivateWarning("You Lost the Game!", client.getName());
 
                 playerCounter -= 1; //
 
-                sendChatMesage((client.getName() + " Lost the game and got out! " + playerCounter + " players left!"), client.getName());
+                sendChatMessage((client.getName() + " Lost the game and got out! " + playerCounter + " players left!"), client.getName());
                 client.closeEverything();
                 return;
             }
             if(playerCounter <= 1 ){
                 sendAll(client.getName() + " is the survivor!");
                 client.closeEverything();
+                return;
+            }
+
+            //If there is a draw:
+            if(grid.checkRemainingWords()){
+
+                String playerWinner = "";
+                int maxScore = 0;
+
+                for(Client c : clients){
+                    if(c.getSocket().isConnected()){
+                        if(c.getScore() > maxScore){
+                            maxScore = c.getScore();
+                            playerWinner = c.getName();
+                        }
+                    }
+                }
+
+                System.out.println(playerWinner + " wins the game with a total Score amount of " + maxScore);
+
+                //TODO: Check
             }
         }
 
         sendAll("Chose and type a word from the given Matrix: ");
     }
+
+    public void checkPlayersInput(String str, Client client){
+        synchronized (this) {
+
+            int score = grid.checkPlayerInput(str);
+
+            //This will set the player score
+            client.setScore(score);
+
+            //Check if Player Missed the Word:
+            if (score == 0) {
+                sendPrivateWarning("You missed!", client.getName());
+                client.setLives();
+                return;
+            }
+        }
+    }
+
+    /**
+     * Send Messages to Players:
+     */
 
     public void sendAll(String message) {
 
@@ -171,7 +217,7 @@ public class ServerDispatch {
         }
     }
 
-    public void sendChatMesage(String message, String user) {
+    public void sendChatMessage(String message, String user) {
 
         for (Client client : clients) {
 
@@ -191,19 +237,6 @@ public class ServerDispatch {
     public void receivePlayerMessage(String msg, Client client){
             sendAll(client.getName() + ": " + msg);
             playGame(msg, client);
-    }
-
-    public void checkPlayersInput(String str, Client client){
-
-        //Check if Player Missed the Word:
-        if(grid.checkPlayerInput(str) == 0){
-            System.out.println("SCORE: " + grid.checkPlayerInput(str) + " str: " + str);
-            sendPrivateWarning("You missed!", client.getName());
-            client.setLives();
-        }
-        //This will set the player score and check the word at th same time.
-        client.setScore(grid.checkPlayerInput(str));
-
     }
 
     public void sendPrivateWarning(String msg, String username) {
