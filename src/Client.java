@@ -58,11 +58,13 @@ public class Client implements Runnable {
                 "  \\ \\  /\\  / / | |__   | |     | |    | |    | |  | || \\  / || |__   | || |\n" +
                 "   \\ \\/  \\/ /  |  __|  | |     | |    | |    | |  | || |\\/| ||  __|  | || |\n" +
                 "    \\  /\\  /   | |____ | |____ | |____| |____| |__| || |  | || |____ |_||_|\n" +
-                "     \\/  \\/    |______||______||______|\\_____|\\____/ |_|  |_||______|(_)(_)\n" +
-                "                           Type /start to START the game\n\n");
+                "     \\/  \\/    |______||______||______|\\_____|\\____/ |_|  |_||______|(_)(_)\n\n" +
+                "                        Type /start to START the game\n\n");
 
-        question.setMessage("What is your Name?");
+        question.setMessage("What is your Name?\n");
         username = prompt.getUserInput(question).toUpperCase();
+        serverDispatch.sendPrivateWarning(("\nWelcome " + username + "! While we are setting the game for you,\nfeel free to chat with other players.\n"), username);
+        System.out.println(Colors.WHITE_UNDERLINED + username + Colors.RESET + " is connected"); //Server Info
 
         try {
 
@@ -74,10 +76,9 @@ public class Client implements Runnable {
                     if (msg.equals("")) continue;
                     if (msg.equals("/start")) {
                         setReady(true);
+                        serverDispatch.sendPrivateWarning(("You are now ready to play. Wait tight for the rest of players."), username);
                         continue;
                     }
-                    //Send message to Server
-                    System.out.println(Thread.currentThread().getId()); //TODO: APAGAR LINHA, era apenas para confirmar o ID da thread q esta a correr.
                     serverDispatch.receivePlayerMessage(msg, this);
                 } else {
                     if (msg.equals("/start")) {
@@ -89,8 +90,8 @@ public class Client implements Runnable {
                         continue;
                     }
 
-                    System.out.println(Thread.currentThread().getId());
                     serverDispatch.sendChatMessage((username + ": " + msg), username);
+                    System.out.println(Colors.BLUE_BRIGHT + username + ":" + Colors.RESET + " " + msg);
                 }
             }
         } catch (IOException ex) {

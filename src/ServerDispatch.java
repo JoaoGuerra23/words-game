@@ -53,11 +53,7 @@ public class ServerDispatch {
 
     public void start() {
 
-        System.out.println("ServerDisatch --> start()"); //TODO:APAGAR
-
-        while(!checkIfAllReady()){
-            //empty on purpose//TODO:APAGAR
-        }
+        while(!checkIfAllReady()){}
 
         briefSummary();
 
@@ -102,7 +98,7 @@ public class ServerDispatch {
                 "    |      GOOD LUCK             |.\n" +
                 "    |   _________________________|___\n" +
                 "    |  /                            /.\n" +
-                "    \\_/dc__________________________/.");
+                "    \\_/____________________________/.");
 
         sendRulesToAll(Colors.WHITE_UNDERLINED + Colors.RED_BOLD + "Starting the game in:" + Colors.RESET + " ");
 
@@ -142,7 +138,7 @@ public class ServerDispatch {
             checkPlayersInput(msg, client);
 
             //Redraw the Matrix
-            System.out.println("Redrawing");
+            clearScreen();
             sendAll(String.valueOf(grid.drawMatrix()));
 
             //Get Player Score and Lives and Show it in Console
@@ -284,5 +280,12 @@ public class ServerDispatch {
         }
 
         System.exit(0);
+    }
+
+    public void clearScreen(){
+
+        sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+
     }
 }
