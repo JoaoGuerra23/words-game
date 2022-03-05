@@ -15,17 +15,17 @@ public class ServerDispatch {
     private final Grid grid;
     private int playerCounter;
 
-    public ServerDispatch(int portNumber, int nThreads, String filePath) {
+    public ServerDispatch(String portNumber, String nThreads, String filePath) {
 
-        this.nThreads = nThreads;
-        this.portNumber = portNumber;
+        this.nThreads = Integer.valueOf(nThreads);
+        this.portNumber = Integer.valueOf(portNumber);
         this.clients = new LinkedList<>();
-        this.fixedPool = Executors.newFixedThreadPool(nThreads);
-        this.grid = new Grid(1, 2, filePath);
+        this.fixedPool = Executors.newFixedThreadPool(this.nThreads);
+        this.grid = new Grid(5, 10, filePath);
 
         try {
 
-            serverSocket = new ServerSocket(portNumber);
+            serverSocket = new ServerSocket(this.portNumber);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -33,6 +33,8 @@ public class ServerDispatch {
     }
 
     public void init() throws IOException {
+
+        System.out.println("SERVER IS ONLINE - Waiting For playing connections");
 
         //Must have all the players connected to start the game
         while (clients.size() < nThreads) {
@@ -80,6 +82,8 @@ public class ServerDispatch {
 
     private void briefSummary() {
 
+        clearScreen();
+
         sendAll("   ______________________________\n" +
                 " / \\                             \\.\n" +
                 "|   |                            |.\n" +
@@ -104,7 +108,7 @@ public class ServerDispatch {
 
         for (int i = 10; i >= 0; i--) {
             try {
-                Thread.sleep(0); //TODO Change me
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -123,6 +127,7 @@ public class ServerDispatch {
         grid.setWordsForMatrix();
 
         //ReDraw the Matrix and send it to every1 again
+        clearScreen();
         sendAll(String.valueOf(grid.drawMatrix()));
         sendAll("Chose and type a word from the given Matrix: ");
 
@@ -155,6 +160,7 @@ public class ServerDispatch {
                 return;
             }
             if(playerCounter <= 1 ){
+                sendAll(drawWinner());
                 sendAll(client.getName() + " is the survivor!");
                 closeServer();
                 return;
@@ -199,8 +205,6 @@ public class ServerDispatch {
                 sendAll(championWordArt);
 
                 closeServer();
-
-                //TODO: Check
             }
         }
 
@@ -287,5 +291,41 @@ public class ServerDispatch {
         sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
         sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 
+        sendAll("\n" +
+                "\n" +
+                " __          __           _        _____                      \n" +
+                " \\ \\        / /          | |      / ____|                     \n" +
+                "  \\ \\  /\\  / /__  _ __ __| |___  | |  __  __ _ _ __ ___   ___ \n" +
+                "   \\ \\/  \\/ / _ \\| '__/ _` / __| | | |_ |/ _` | '_ ` _ \\ / _ \\\n" +
+                "    \\  /\\  / (_) | | | (_| \\__ \\ | |__| | (_| | | | | | |  __/\n" +
+                "     \\/  \\/ \\___/|_|  \\__,_|___/  \\_____|\\__,_|_| |_| |_|\\___|\n" +
+                "                                                              \n" +
+                "                                                              \n" +
+                "\n");
+
+    }
+
+    public String drawWinner(){
+        return
+                "    -----------------\n" +
+                        "    |@@@@|     |####|\n" +
+                        "    |@@@@|     |####|\n" +
+                        "    |@@@@|     |####|\n" +
+                        "     |@@@|     |###|\n" +
+                        "      |@@|     |##|\n" +
+                        "      `@@|_____|##'\n" +
+                        "           (O)\n" +
+                        "        .-'''''-.\n" +
+                        "      .'  * * *  `.\n" +
+                        "     :  *       *  :\n" +
+                        "          " + client.getName() + "\n" +
+                        "     :~           ~:\n" +
+                        "     :  *       *  :\n" +
+                        "      `.  * * *  .'\n" +
+                        "        `-.....-'\n";
+    }
+
+    public LinkedList<Client> getClientList() {
+        return this.clients;
     }
 }

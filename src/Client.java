@@ -1,5 +1,7 @@
 import org.academiadecodigo.bootcamp.Prompt;
+import org.academiadecodigo.bootcamp.scanners.menu.MenuInputScanner;
 import org.academiadecodigo.bootcamp.scanners.string.StringInputScanner;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -30,13 +32,12 @@ public class Client implements Runnable {
     }
 
     public void sendRules(String str) {
-            out.print(str + " ");
-            out.flush();
+        out.print(str + " ");
+        out.flush();
     }
 
     @Override
     public void run() {
-
         Prompt prompt = null;
         try {
 
@@ -50,42 +51,67 @@ public class Client implements Runnable {
             e.printStackTrace();
         }
 
-
-        StringInputScanner question = new StringInputScanner();
-
         out.println(" __          __ ______  _       _       _____  ____   __  __  ______  _  _ \n" +
                 " \\ \\        / /|  ____|| |     | |     / ____|/ __ \\ |  \\/  ||  ____|| || |\n" +
                 "  \\ \\  /\\  / / | |__   | |     | |    | |    | |  | || \\  / || |__   | || |\n" +
                 "   \\ \\/  \\/ /  |  __|  | |     | |    | |    | |  | || |\\/| ||  __|  | || |\n" +
                 "    \\  /\\  /   | |____ | |____ | |____| |____| |__| || |  | || |____ |_||_|\n" +
                 "     \\/  \\/    |______||______||______|\\_____|\\____/ |_|  |_||______|(_)(_)\n\n" +
-                "                        Type /start to START the game\n\n");
+                "         Type /start to START the game or /pm to message other players\n\n");
 
-        question.setMessage("What is your Name?\n");
+
+        StringInputScanner question = new StringInputScanner();
+        question.setMessage("Set your nickname:\n");
         username = prompt.getUserInput(question).toUpperCase();
         serverDispatch.sendPrivateWarning(("\nWelcome " + username + "! While we are setting the game for you,\nfeel free to chat with other players.\n"), username);
         System.out.println(Colors.WHITE_UNDERLINED + username + Colors.RESET + " is connected"); //Server Info
 
         try {
-
-            while(true) {
+            while (true) {
 
                 msg = in.readLine();
 
-                if(getIsReady()) {
+                if (getIsReady()) {
                     if (msg.equals("")) continue;
                     if (msg.equals("/start")) {
                         setReady(true);
-                        serverDispatch.sendPrivateWarning(("You are now ready to play. Wait tight for the rest of players."), username);
+                        serverDispatch.sendPrivateWarning(("This command will not take effect now."), username);
                         continue;
                     }
                     serverDispatch.receivePlayerMessage(msg, this);
                 } else {
+                    if (msg.equals("/pm")) {
+
+                        String[] strArray = new String[serverDispatch.getClientList().size() - 1];
+
+                        for (int i = 0; i < serverDispatch.getClientList().size(); i++) {
+                            if (!serverDispatch.getClientList().get(i).getName().equals(username)) {
+                                strArray[i] = serverDispatch.getClientList().get(i).getName();
+                            }
+                        }
+
+
+                        MenuInputScanner scanner = new MenuInputScanner(strArray);
+                        scanner.setMessage("Users Available: ");
+
+                        int answerIndex = prompt.getUserInput(scanner);
+
+                        StringInputScanner personalMessage = new StringInputScanner();
+                        personalMessage.setMessage("Write your message to player:\n");
+                        String personalM = "(PM) " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
+                        serverDispatch.sendPrivateWarning(("PM sent."), username);
+
+                        serverDispatch.sendPrivateWarning(personalM, strArray[answerIndex - 1]);
+                        continue;
+
+                    }
                     if (msg.equals("/start")) {
-                        serverDispatch.sendChatMessage((username + " typed /start to start the game!"), username); //TODO: Put some color in this text to highlit it from the rest
+                        serverDispatch.sendChatMessage((username + " typed /start to start the game!"), username);
+                        serverDispatch.sendPrivateWarning(("Waiting for other players"), username);
                         setReady(true);
                         continue;
-                    } else if(msg.equals("")){
+
+                    } else if (msg.equals("")) {
                         serverDispatch.sendPrivateWarning("Stop Spamming with blanks!!", username);
                         continue;
                     }
@@ -97,10 +123,10 @@ public class Client implements Runnable {
         } catch (IOException ex) {
             closeEverything();
         }
+
     }
 
     public void closeEverything() {
-
         try {
 
             in.close();
@@ -117,10 +143,10 @@ public class Client implements Runnable {
      * Getters & Setters
      */
     public void setLives() {
-        this.lives --;
+        this.lives--;
     }
 
-    public void setScore(int score){
+    public void setScore(int score) {
         this.score += score;
     }
 

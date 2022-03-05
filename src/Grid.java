@@ -24,17 +24,19 @@ public class Grid {
     //Set Bi-Dimensional Array Keys and Values
     public void setWordsForMatrix() {
 
-       /* try { -> ACCEPTS 50 WORDS IN A TEXT FILE.
+        setWordsForMatrixBackup();
+
+        try {
             BufferedReader in = new BufferedReader(new FileReader(PATH));
             StringBuilder sb = new StringBuilder();
 
-            for(int i = 0; i < rows; i++){
-                for(int j = 0; j < cols; j++){
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
 
                     String word = in.readLine();
                     int countSpaces = 10 - word.length();
 
-                    for(int k = 0; k < countSpaces; k++){
+                    for (int k = 0; k < countSpaces; k++) {
 
                         word += String.valueOf(sb.append(" "));
                         //reset sb buffer
@@ -44,14 +46,17 @@ public class Grid {
                 }
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            setWordsForMatrixBackup();
         } catch (IOException e) {
             e.printStackTrace();
-        }*/ // TODO: -> It is fully working !!! Only applicable when we convert this to JAR. for tests, use the down list.
+        }
+    }
+
+    public void setWordsForMatrixBackup() {
 
         wordMatrix[0][0] = "missile" + "   ";
         wordMatrix[0][1] = "damn" + "      ";
-       /*  wordMatrix[0][2] = "witness" + "   ";
+        wordMatrix[0][2] = "witness" + "   ";
         wordMatrix[0][3] = "acid" + "      ";
         wordMatrix[0][4] = "location" + "  ";
         wordMatrix[0][5] = "wake" + "      ";
@@ -98,8 +103,7 @@ public class Grid {
         wordMatrix[4][6] = "embryo" + "    ";
         wordMatrix[4][7] = "vision" + "    ";
         wordMatrix[4][8] = "incident" + "  ";
-        wordMatrix[4][9] = "pound" + "     ";*/
-
+        wordMatrix[4][9] = "pound" + "     ";
     }
 
     //Draw a Matrix of the Array Words in Columns and Rows
