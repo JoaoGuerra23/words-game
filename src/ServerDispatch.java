@@ -13,6 +13,7 @@ public class ServerDispatch {
     private int nThreads;
     private final int portNumber;
     private Grid grid;
+    private int playerCounter;
 
     public ServerDispatch(int portNumber, int nThreads) {
 
@@ -125,21 +126,41 @@ public class ServerDispatch {
         sendAll(String.valueOf(grid.drawMatrix()));
         sendAll("Chose and type a word from the given Matrix: ");
 
+        this.playerCounter = clients.size();
+
     }
 
-    public void playGame(String msg){
+    public void playGame(String msg, Client client){
+        synchronized (this) {
 
             //Check player Input
-            checkPlayersInput(msg);
+            checkPlayersInput(msg, client);
 
             //Redraw the Matrix
             System.out.println("Redrawing");
             sendAll(String.valueOf(grid.drawMatrix()));
 
-            //Get Player Score and Show it in Console
-            client.showScore();
+            //Get Player Score and Lives and Show it in Console
+            sendPrivateWarning(("Lives: " + String.valueOf(client.getLives()) + " ~ Personal Score: " + String.valueOf(client.getScore())), client.getName());
 
-            sendAll("Chose and type a word from the given Matrix: ");
+            //Check If there are still words available && if Player Lost && if only 1 player playing!
+            grid.gameFinishChecker();
+            if (client.getLives() == 0) {
+                sendPrivateWarning("You Lost the Game!", client.getName());
+
+                playerCounter -= 1; //
+
+                sendChatMesage((client.getName() + " Lost the game and got out! " + playerCounter + " players left!"), client.getName());
+                client.closeEverything();
+                return;
+            }
+            if(playerCounter <= 1 ){
+                sendAll(client.getName() + " is the survivor!");
+                client.closeEverything();
+            }
+        }
+
+        sendAll("Chose and type a word from the given Matrix: ");
     }
 
     public void sendAll(String message) {
@@ -147,9 +168,9 @@ public class ServerDispatch {
         for (Client client : clients) {
 
             client.send(message);
-
         }
     }
+
     public void sendChatMesage(String message, String user) {
 
         for (Client client : clients) {
@@ -163,24 +184,30 @@ public class ServerDispatch {
     public void sendRulesToAll(String message) {
 
         for (Client client : clients) {
-
             client.sendRules(message);
-
         }
     }
 
-    public void receivePlayerMessage(String msg){
+    public void receivePlayerMessage(String msg, Client client){
             sendAll(client.getName() + ": " + msg);
-            playGame(msg);
+            playGame(msg, client);
     }
 
-    public void checkPlayersInput(String str){
+    public void checkPlayersInput(String str, Client client){
 
-            //This will set the player score and check the word at th same time.
-            client.setScore(grid.checkPlayerInput(str));
+        //Check if Player Missed the Word:
+        if(grid.checkPlayerInput(str) == 0){
+            System.out.println("SCORE: " + grid.checkPlayerInput(str) + " str: " + str);
+            sendPrivateWarning("You missed!", client.getName());
+            client.setLives();
+        }
+        //This will set the player score and check the word at th same time.
+        client.setScore(grid.checkPlayerInput(str));
+
     }
 
     public void sendPrivateWarning(String msg, String username) {
+
         for (Client client : clients) {
 
             if(client.getName().equals(username)){

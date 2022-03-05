@@ -16,24 +16,22 @@ public class Client implements Runnable {
     private String msg;
     private String username;
     private int score;
+    private int lives;
 
     public Client(Socket socket, ServerDispatch serverDispatch) throws IOException {
 
         this.socket = socket;
         this.serverDispatch = serverDispatch;
+        this.lives = 3;
 
     }
 
     public void setScore(int score){
-        this.score = score;
-
+        this.score += score;
     }
 
-    //SHOW PLAYER SCORE
-    public void showScore() {
-
-        System.out.println(username + " score: " + score);
-
+    public int getScore() {
+        return this.score;
     }
 
     public void send(String str) {
@@ -100,8 +98,8 @@ public class Client implements Runnable {
                         continue;
                     }
                     //Send message to Server
-                    System.out.println(Thread.currentThread().getId());
-                    serverDispatch.receivePlayerMessage(msg);
+                    System.out.println(Thread.currentThread().getId()); //TODO: APAGAR LINHA, era apenas para confirmar o ID da thread q esta a correr.
+                    serverDispatch.receivePlayerMessage(msg, this);
                 } else {
                     if (msg.equals("/start")) {
                         serverDispatch.sendChatMesage((username + " typed /start to start the game!"), username); //TODO: Put some color in this text to highlit it from the rest
@@ -117,7 +115,29 @@ public class Client implements Runnable {
                 }
             }
         } catch (IOException ex) {
-            ex.printStackTrace();
+            closeEverything();
+        }
+    }
+
+    public void setLives() {
+        this.lives --;
+    }
+
+    public int getLives() {
+        return this.lives;
+    }
+
+    public void closeEverything() {
+
+        try {
+
+            in.close();
+            out.close();
+            printStream.close();
+            socket.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
