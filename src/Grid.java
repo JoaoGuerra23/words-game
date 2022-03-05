@@ -1,15 +1,6 @@
-import org.academiadecodigo.bootcamp.Prompt;
-import org.academiadecodigo.bootcamp.scanners.string.StringInputScanner;
-
 public class Grid {
 
-    //PROPRIEDADES DA CLASSE
-    private Prompt prompt = new Prompt(System.in, System.out);
     private static String[][] wordMatrix;
-    private StringInputScanner inputScanner;
-    private String lastTypedWord;
-
-    private int playerScore = 0;
     private int countBlankSpaces;
     private final int rows;
     private final int cols;
@@ -21,7 +12,6 @@ public class Grid {
 
         wordMatrix = new String[this.rows][this.cols];
         countBlankSpaces = 0;
-        inputScanner = new StringInputScanner();
     }
 
     //Set Bi-Dimensional Array Keys and Values
@@ -98,33 +88,29 @@ public class Grid {
     }
 
     //Check Player Input and Compare it with the List
-    public void checkPlayerInput(String str) {
+    public int checkPlayerInput(String str) {
+        synchronized (this) {
 
-        System.out.println("Inside checkPlayerInput");
+            int score = 0;
 
-        for (int i = 0; i < wordMatrix.length; i++) {
-            for (int j = 0; j < wordMatrix[i].length; j++) {
+            for (int i = 0; i < wordMatrix.length; i++) {
+                for (int j = 0; j < wordMatrix[i].length; j++) {
 
-                System.out.println(str);
+                    //Remove the blank spaces of the word:
+                    String trimmedWord = wordMatrix[i][j].trim();
 
-                //Remove the blank spaces of the word:
-                String trimmedWord = wordMatrix[i][j].trim();
-                //System.out.println("Inside checkPlayerInput2"); TODO: apagar
-                //If word equals to player input:
-                if (str.equals(trimmedWord)) {
+                    //If word equals to player input:
+                    if (str.equals(trimmedWord)) {
 
-                    System.out.println("Inside checkPlayerInput3");
+                        //score += trimmedWord.length();
+                        score += trimmedWord.length();
+                        wordMatrix[i][j] = "          ";
 
-                    playerScore += trimmedWord.length();
-                    wordMatrix[i][j] = "          ";
+                    }
                 }
             }
+            return score;
         }
-    }
-
-    //SHOW PLAYER SCORE
-    public void showPlayerScore() {
-        System.out.println("Player score: " + playerScore);
     }
 
     //METODO PARA VERIFICAR SE AINDA EXISTEM PALAVRAS NA TABELA

@@ -11,30 +11,29 @@ public class Client implements Runnable {
     private BufferedReader in;
     private ServerDispatch serverDispatch;
     private PrintStream printStream;
+
     private boolean isReady;
     private String msg;
-    private Grid grid;
     private String username;
-    private Prompt prompt;
-    private StringInputScanner question;
+    private int score;
 
-    public Client(Socket socket, ServerDispatch serverDispatch, Grid grid) throws IOException {
+    public Client(Socket socket, ServerDispatch serverDispatch) throws IOException {
 
         this.socket = socket;
         this.serverDispatch = serverDispatch;
-        this.grid = grid;
-
-        this.out = new PrintWriter(socket.getOutputStream(), true);
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.printStream = new PrintStream(socket.getOutputStream());
-
-        this.prompt = new Prompt(socket.getInputStream(), printStream);
-        this.question = new StringInputScanner();
 
     }
 
-    public String getMsg() {
-        return msg;
+    public void setScore(int score){
+        this.score = score;
+
+    }
+
+    //SHOW PLAYER SCORE
+    public void showScore() {
+
+        System.out.println(username + " score: " + score);
+
     }
 
     public void send(String str) {
@@ -42,30 +41,40 @@ public class Client implements Runnable {
     }
 
     public void sendRules(String str) {
-        synchronized (this) {
             out.print(str + " ");
             out.flush();
-        }
     }
 
     public boolean getIsReady() {
-        synchronized (this) {
             return isReady;
-        }
     }
 
     public void setReady(boolean ready) {
-        synchronized (this) {
-            isReady = ready;
-        }
+        isReady = ready;
     }
 
-    public String getUsername() {
-        return username;
+    public String getName() {
+        return this.username;
     }
 
     @Override
     public void run() {
+
+        Prompt prompt = null;
+        try {
+
+            this.out = new PrintWriter(socket.getOutputStream(), true);
+            this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            this.printStream = new PrintStream(socket.getOutputStream());
+
+            prompt = new Prompt(socket.getInputStream(), printStream);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        StringInputScanner question = new StringInputScanner();
 
         out.println(" __          __ ______  _       _       _____  ____   __  __  ______  _  _ \n" +
                 " \\ \\        / /|  ____|| |     | |     / ____|/ __ \\ |  \\/  ||  ____|| || |\n" +
@@ -80,7 +89,7 @@ public class Client implements Runnable {
 
         try {
 
-            while(true){
+            while(true) {
 
                 msg = in.readLine();
 
@@ -91,15 +100,22 @@ public class Client implements Runnable {
                         continue;
                     }
                     //Send message to Server
+                    System.out.println(Thread.currentThread().getId());
                     serverDispatch.receivePlayerMessage(msg);
                 } else {
                     if (msg.equals("/start")) {
+                        serverDispatch.sendChatMesage((username + " typed /start to start the game!"), username); //TODO: Put some color in this text to highlit it from the rest
                         setReady(true);
                         continue;
+                    } else if(msg.equals("")){
+                        serverDispatch.sendPrivateWarning("Stop Spamming with blanks!!", username);
+                        continue;
                     }
+
+                    System.out.println(Thread.currentThread().getId());
+                    serverDispatch.sendChatMesage((username + ": " + msg), username);
                 }
             }
-
         } catch (IOException ex) {
             ex.printStackTrace();
         }

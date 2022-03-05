@@ -11,21 +11,20 @@ public class ServerDispatch {
     private ServerSocket serverSocket;
     private Client client;
     private int nThreads;
-    private final int port;
+    private final int portNumber;
     private Grid grid;
-    private String msg;
 
-    public ServerDispatch(int port, int nThreads) {
+    public ServerDispatch(int portNumber, int nThreads) {
 
             this.nThreads = nThreads;
-            this.port = port;
+            this.portNumber = portNumber;
             this.clients = new LinkedList<>();
             this.fixedPool = Executors.newFixedThreadPool(nThreads);
             this.grid = new Grid(5, 10);
 
         try {
 
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(portNumber);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -37,7 +36,7 @@ public class ServerDispatch {
         //Must have all the players connected to start the game
         while (clients.size() < nThreads) {
 
-            client = new Client(serverSocket.accept(), this, this.grid);
+            client = new Client(serverSocket.accept(), this);
             clients.add(client);
 
             fixedPool.submit(client);
@@ -48,16 +47,14 @@ public class ServerDispatch {
     }
 
     public void start() {
-        synchronized (this) {
 
-            System.out.println("ServerDisatch --> start()"); //TODO:APAGAR
+        System.out.println("ServerDisatch --> start()"); //TODO:APAGAR
 
-            while(!checkIfAllReady()){
-                //empty on purpose//TODO:APAGAR
-            }
-
-            briefSummary();
+        while(!checkIfAllReady()){
+            //empty on purpose//TODO:APAGAR
         }
+
+        briefSummary();
 
     }
 
@@ -131,7 +128,6 @@ public class ServerDispatch {
     }
 
     public void playGame(String msg){
-        synchronized (this) {
 
             //Check player Input
             checkPlayersInput(msg);
@@ -140,10 +136,10 @@ public class ServerDispatch {
             System.out.println("Redrawing");
             sendAll(String.valueOf(grid.drawMatrix()));
 
-            //Show Player Score
-            grid.showPlayerScore();
-        }
-        sendAll("Chose and type a word from the given Matrix: ");
+            //Get Player Score and Show it in Console
+            client.showScore();
+
+            sendAll("Chose and type a word from the given Matrix: ");
     }
 
     public void sendAll(String message) {
@@ -152,6 +148,15 @@ public class ServerDispatch {
 
             client.send(message);
 
+        }
+    }
+    public void sendChatMesage(String message, String user) {
+
+        for (Client client : clients) {
+
+            if(!client.getName().equals(user)){
+                client.send(message);
+            }
         }
     }
 
@@ -165,15 +170,23 @@ public class ServerDispatch {
     }
 
     public void receivePlayerMessage(String msg){
-        synchronized (this) {
+            sendAll(client.getName() + ": " + msg);
             playGame(msg);
-        }
     }
 
     public void checkPlayersInput(String str){
 
-        synchronized (this) {
-            grid.checkPlayerInput(str);
+            //This will set the player score and check the word at th same time.
+            client.setScore(grid.checkPlayerInput(str));
+    }
+
+    public void sendPrivateWarning(String msg, String username) {
+        for (Client client : clients) {
+
+            if(client.getName().equals(username)){
+                client.send(msg);
+            }
+
         }
     }
 }
