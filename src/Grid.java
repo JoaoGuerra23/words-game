@@ -51,7 +51,7 @@ public class Grid {
 
         wordMatrix[0][0] = "missile" + "   ";
         wordMatrix[0][1] = "damn" + "      ";
-        wordMatrix[0][2] = "witness" + "   ";
+       /*  wordMatrix[0][2] = "witness" + "   ";
         wordMatrix[0][3] = "acid" + "      ";
         wordMatrix[0][4] = "location" + "  ";
         wordMatrix[0][5] = "wake" + "      ";
@@ -98,7 +98,7 @@ public class Grid {
         wordMatrix[4][6] = "embryo" + "    ";
         wordMatrix[4][7] = "vision" + "    ";
         wordMatrix[4][8] = "incident" + "  ";
-        wordMatrix[4][9] = "pound" + "     ";
+        wordMatrix[4][9] = "pound" + "     ";*/
 
     }
 
@@ -153,7 +153,6 @@ public class Grid {
                 if (wordMatrix[i][j].equals("          ")) {
                     countBlankSpaces++;
                     if (countBlankSpaces == wordMatrix.length * cols) {
-                        System.out.println("THERE ARE NO MORE WORDS! GAME FINISHED!");
                         return true;
                     }
 

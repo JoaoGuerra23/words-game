@@ -12,16 +12,16 @@ public class ServerDispatch {
     private Client client;
     private int nThreads;
     private final int portNumber;
-    private Grid grid;
+    private final Grid grid;
     private int playerCounter;
 
     public ServerDispatch(int portNumber, int nThreads, String filePath) {
 
-            this.nThreads = nThreads;
-            this.portNumber = portNumber;
-            this.clients = new LinkedList<>();
-            this.fixedPool = Executors.newFixedThreadPool(nThreads);
-            this.grid = new Grid(5, 10, filePath);
+        this.nThreads = nThreads;
+        this.portNumber = portNumber;
+        this.clients = new LinkedList<>();
+        this.fixedPool = Executors.newFixedThreadPool(nThreads);
+        this.grid = new Grid(1, 2, filePath);
 
         try {
 
@@ -104,7 +104,7 @@ public class ServerDispatch {
                 "    |  /                            /.\n" +
                 "    \\_/dc__________________________/.");
 
-        sendRulesToAll("Starting the game in: ");
+        sendRulesToAll(Colors.WHITE_UNDERLINED + Colors.RED_BOLD + "Starting the game in:" + Colors.RESET + " ");
 
         for (int i = 10; i >= 0; i--) {
             try {
@@ -160,7 +160,7 @@ public class ServerDispatch {
             }
             if(playerCounter <= 1 ){
                 sendAll(client.getName() + " is the survivor!");
-                client.closeEverything();
+                closeServer();
                 return;
             }
 
@@ -179,7 +179,30 @@ public class ServerDispatch {
                     }
                 }
 
-                System.out.println(playerWinner + " wins the game with a total Score amount of " + maxScore);
+                sendAll(playerWinner + " wins the game with a total Score amount of " + maxScore);
+
+                String championWordArt =
+                        "    -----------------\n" +
+                        "    |@@@@|     |####|\n" +
+                        "    |@@@@|     |####|\n" +
+                        "    |@@@@|     |####|\n" +
+                        "     |@@@|     |###|\n" +
+                        "      |@@|     |##|\n" +
+                        "      `@@|_____|##'\n" +
+                        "           (O)\n" +
+                        "        .-'''''-.\n" +
+                        "      .'  * * *  `.\n" +
+                        "     :  *       *  :\n" +
+                        "          " + playerWinner + "\n" +
+                        "     :~           ~:\n" +
+                        "     :  *       *  :\n" +
+                        "      `.  * * *  .'\n" +
+                        "        `-.....-'\n";
+
+
+                sendAll(championWordArt);
+
+                closeServer();
 
                 //TODO: Check
             }
@@ -246,7 +269,20 @@ public class ServerDispatch {
             if(client.getName().equals(username)){
                 client.send(msg);
             }
-
         }
+    }
+
+    public void closeServer(){
+
+        sendAll("End Game!");
+
+        client.closeEverything();
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.exit(0);
     }
 }
