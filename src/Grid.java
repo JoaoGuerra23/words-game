@@ -11,11 +11,12 @@ public class Grid {
     private final int cols;
     private static String PATH;
 
-    public Grid(int rows, int cols, String filePath) {
+    public Grid(String filePath) {
 
-        this.rows = rows;
-        this.cols = cols;
         this.PATH = filePath;
+
+        this.rows = 5; //TODO make this dinamic as per the input file size.
+        this.cols = 10;
 
         wordMatrix = new String[this.rows][this.cols];
         countBlankSpaces = 0;

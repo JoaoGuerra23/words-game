@@ -16,13 +16,13 @@ public class ServerDispatch {
     private final Grid grid;
     private int playerCounter;
 
-    public ServerDispatch(int portNumber, int nThreads, String filePath) {
+    public ServerDispatch(String portNumber, String nThreads, String filePath) {
 
         this.nThreads = Integer.valueOf(nThreads);
         this.portNumber = Integer.valueOf(portNumber);
         this.clientsList = new LinkedList<>();
         this.fixedPool = Executors.newFixedThreadPool(this.nThreads);
-        this.grid = new Grid(5, 10, filePath);
+        this.grid = new Grid(filePath);
 
         try {
             serverSocket = new ServerSocket(this.portNumber);
