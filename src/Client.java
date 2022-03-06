@@ -96,14 +96,13 @@ public class Client implements Runnable {
                 } else if (this.msg.equals("/start")) {
                     serverDispatch.sendPrivateWarning(("You are already waiting for game start."), username);
                 } else if (this.msg.equals("/pm")) {
-                    sendPrivateMessage(this.prompt, this.username);
+                    sendPrivateMessage(this.prompt);
                 } else {
                     serverDispatch.receivePlayerMessage(this.msg, this);
                 }
             } else {
                 if (msg.equals("/pm")) {
-                    System.out.println("pm from " + this.username);
-                    sendPrivateMessage(this.prompt, this.username);
+                    sendPrivateMessage(this.prompt);
                 } else if (this.msg.equals("/start")) {
                     serverDispatch.sendChatMessage((this.username + " typed /start to start the game!"), this.username);
                     serverDispatch.sendPrivateWarning(("Waiting for other players"), this.username);
@@ -119,7 +118,7 @@ public class Client implements Runnable {
         }
     }
 
-    public void sendPrivateMessage(Prompt prompt, String username) {
+    public void sendPrivateMessage(Prompt prompt) {
 
         String[] strArray = new String[serverDispatch.getClientList().size() - 1];
         LinkedList<String> usersList = new LinkedList<>();
@@ -145,8 +144,9 @@ public class Client implements Runnable {
         personalMessage.setMessage("Write your message to player:\n");
         String personalM = "(PM) " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
         serverDispatch.sendPrivateWarning(("PM sent."), username);
+        System.out.println(username + ": is having a private chat with " + usersList.get(answerIndex-1) + "." + Colors.PURPLE_BOLD_BRIGHT + " Who knows what ... " + Colors.RESET);
 
-        serverDispatch.sendPrivateWarning(personalM, usersList.get(answerIndex-1)); //TODO: corrigir
+        serverDispatch.sendPrivateWarning(personalM, usersList.get(answerIndex-1));
     }
 
     public void closeEverything() {

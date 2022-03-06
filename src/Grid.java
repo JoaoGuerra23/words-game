@@ -7,34 +7,56 @@ public class Grid {
 
     private static String[][] wordMatrix;
     private int countBlankSpaces;
-    private final int rows;
+    private int rows;
     private final int cols;
     private static String PATH;
 
     public Grid(String filePath) {
 
         this.PATH = filePath;
-
-        this.rows = 5; //TODO make this dinamic as per the input file size.
         this.cols = 10;
+        checkRowSize();
 
         wordMatrix = new String[this.rows][this.cols];
         countBlankSpaces = 0;
+
+
+    }
+
+    private void checkRowSize() {
+        BufferedReader in = null;
+        try {
+            in = new BufferedReader(new FileReader(PATH));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        //A quantidade de linhas no ficheiro tem de ser par:
+        int linesInFile = 0;
+        if((linesInFile = Integer.valueOf((int) in.lines().count())) % 2 == 0) {
+            this.rows = linesInFile / 10;
+        } else {
+            System.out.println("The file your trying to read has an odd number of lines. Make it pair.");
+        }
     }
 
     //Set Bi-Dimensional Array Keys and Values
     public void setWordsForMatrix() {
 
         try {
+            //Create Buffer to receive and Read the file
             BufferedReader in = new BufferedReader(new FileReader(PATH));
+            //Instantiate a new StringBuilder
             StringBuilder sb = new StringBuilder();
 
+            //Loop through the rows:
             for (int i = 0; i < rows; i++) {
+                //Loop through the columns:
                 for (int j = 0; j < cols; j++) {
 
                     String word = in.readLine();
                     int countSpaces = 10 - word.length();
-
+                    //If the word fot 3 letters, put 7 spaces to complete 10 chars.
                     for (int k = 0; k < countSpaces; k++) {
 
                         word += String.valueOf(sb.append(" "));
