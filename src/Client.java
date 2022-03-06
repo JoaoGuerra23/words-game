@@ -1,9 +1,11 @@
 import org.academiadecodigo.bootcamp.Prompt;
 import org.academiadecodigo.bootcamp.scanners.menu.MenuInputScanner;
+import org.academiadecodigo.bootcamp.scanners.string.PasswordInputScanner;
 import org.academiadecodigo.bootcamp.scanners.string.StringInputScanner;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class Client implements Runnable {
@@ -15,6 +17,7 @@ public class Client implements Runnable {
     private PrintStream printStream;
     private Prompt prompt;
     private StringInputScanner question;
+    private HashMap<String, String> adminAccount = new HashMap<>();
 
     private boolean isReady;
     private String msg;
@@ -75,11 +78,101 @@ public class Client implements Runnable {
 
         question.setMessage("Set your nickname:\n");
 
-        this.username = prompt.getUserInput(question).toUpperCase();
+        this.username = prompt.getUserInput(question);
+
+        if (username.equals("admin")) {
+            adminLogin();
+            return;
+        }
+
         serverDispatch.sendPrivateWarning(("\nWelcome " + this.username + "! While we are setting the game for you,\nfeel free to chat with other players.\n"), this.username);
         System.out.println(Colors.WHITE_UNDERLINED + this.username + Colors.RESET + " is connected"); //Server Info
 
     }
+
+    private void adminLogin() {
+
+        adminAccount.put("admin", "bullshit");
+
+        PasswordInputScanner password = new PasswordInputScanner();
+        password.setMessage("Type admin password: ");
+
+        String pass = prompt.getUserInput(password);
+
+        if (adminAccount.get("admin").equals(pass)) {
+            System.out.println("SERVER: An Admin is present!");
+            serverDispatch.sendAll("SERVER: An admin just logged in server!");
+            adminMenu();
+        } else {
+            serverDispatch.sendPrivateWarning("Incorrect password! Nice Try!", username);
+            System.out.println("Someone is trying to access GodMode!");
+            setName();
+        }
+
+    }
+
+    private void adminMenu() {
+
+        while (true) {
+
+            try {
+                this.msg = in.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (this.msg.equals("/kick")) {
+
+                LinkedList<String> players = new LinkedList<>();
+                for (Client c : serverDispatch.getClientList()) {
+                    players.offer(c.getName());
+                }
+
+                String[] playersList = new String[players.size()];
+                for (int i = 0; i < players.size(); i++) {
+                    playersList[i] = players.get(i);
+                }
+
+                MenuInputScanner scanner = new MenuInputScanner(playersList);
+                scanner.setMessage("Users Available: ");
+                int answerIndex = prompt.getUserInput(scanner);
+
+                StringInputScanner kickMessageMenu = new StringInputScanner();
+                kickMessageMenu.setMessage("Write your message to player:\n");
+                String kickMessage = prompt.getUserInput(kickMessageMenu);
+
+                System.out.println(Colors.RED_BOLD_BRIGHT + "[Player KICKED]: " + playersList[answerIndex - 1] + Colors.RESET); //Blocking
+                serverDispatch.sendPrivateWarning((Colors.RED_BOLD_BRIGHT + "[You were Kicked]: " + kickMessage), playersList[answerIndex - 1]);
+
+                for (Client cl : serverDispatch.getClientList()) {
+                    if (cl.getName() == playersList[answerIndex - 1]) {
+                        try {
+                            cl.getSocket().close();
+                        } catch (IOException e) {
+                            System.err.println("<<Socket Close Warning>>");
+                        }
+                    }
+                }
+                serverDispatch.sendPrivateWarning("SERVER: Player " + playersList[answerIndex - 1] + " Kicked!", username);
+                continue;
+            }
+            else if(this.msg.equals("/list")) {
+                StringBuilder sb = new StringBuilder();
+
+                for (Client c : serverDispatch.getClientList()) {
+                    if (!c.getName().equals(username)) {
+                        sb.append(". " + c.getName() + " :: Score: " + c.getScore() + " :: Lives: " + c.getLives() + "\n");
+                    }
+                }
+
+                serverDispatch.sendPrivateWarning(String.valueOf(sb), username);
+                continue;
+            }
+            serverDispatch.sendChatMessage((Colors.RED_BOLD_BRIGHT + "[ADMIN]: " + Colors.RESET + this.msg), this.username);
+            System.out.println(Colors.RED_BOLD_BRIGHT + "[ADMIN]: " + Colors.RESET + this.msg);
+        }
+    }
+
 
     private void checkPlayerInput() {
 
@@ -88,7 +181,7 @@ public class Client implements Runnable {
             try {
                 this.msg = in.readLine();
             } catch (IOException e) {
-                e.printStackTrace();
+                System.err.println("<<Socket Close Warning>>");
             }
 
             if (getIsReady()) {
@@ -125,13 +218,13 @@ public class Client implements Runnable {
 
         //Had to add the users to a Linked List first due to bad index management.
         for (Client client : serverDispatch.getClientList()) {
-            if(!client.getName().equals(username)) {
+            if (!client.getName().equals(username)) {
                 usersList.add(client.getName());
             }
         }
 
         //Add to array list because Menu only accepts arrays not linkedlists
-        for(int i = 0; i < usersList.size(); i++){
+        for (int i = 0; i < usersList.size(); i++) {
             strArray[i] = usersList.get(i);
         }
 
@@ -144,21 +237,24 @@ public class Client implements Runnable {
         personalMessage.setMessage("Write your message to player:\n");
         String personalM = "(PM) " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
         serverDispatch.sendPrivateWarning(("PM sent."), username);
-        System.out.println(username + ": is having a private chat with " + usersList.get(answerIndex-1) + "." + Colors.PURPLE_BOLD_BRIGHT + " Who knows what ... " + Colors.RESET);
+        System.out.println(username + ": is having a private chat with " + usersList.get(answerIndex - 1) + "." + Colors.PURPLE_BOLD_BRIGHT + " Who knows what ... " + Colors.RESET);
 
-        serverDispatch.sendPrivateWarning(personalM, usersList.get(answerIndex-1));
+        serverDispatch.sendPrivateWarning(personalM, usersList.get(answerIndex - 1));
     }
 
     public void closeEverything() {
         try {
 
+            //Make the flush first then close it.
             in.close();
+            out.flush();
             out.close();
+            printStream.flush();
             printStream.close();
             socket.close();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Socket Close Exception...");
         }
     }
 
