@@ -24,8 +24,6 @@ public class Grid {
     //Set Bi-Dimensional Array Keys and Values
     public void setWordsForMatrix() {
 
-        setWordsForMatrixBackup();
-
         try {
             BufferedReader in = new BufferedReader(new FileReader(PATH));
             StringBuilder sb = new StringBuilder();
@@ -52,6 +50,7 @@ public class Grid {
         }
     }
 
+    //In case of Exception
     public void setWordsForMatrixBackup() {
 
         wordMatrix[0][0] = "missile" + "   ";
@@ -149,7 +148,7 @@ public class Grid {
         }
     }
 
-    //METODO PARA VERIFICAR SE AINDA EXISTEM PALAVRAS NA TABELA
+    //Check if is there any remaining words in grid.
     public boolean checkRemainingWords() {
 
         for (int i = 0; i < wordMatrix.length; i++) {
