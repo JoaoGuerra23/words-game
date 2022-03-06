@@ -16,7 +16,7 @@ public class ServerDispatch {
     private final Grid grid;
     private int playerCounter;
 
-    public ServerDispatch(int portNumber, int nThreads, String filePath) {
+    public ServerDispatch(String portNumber, String nThreads, String filePath) {
 
         this.nThreads = Integer.valueOf(nThreads);
         this.portNumber = Integer.valueOf(portNumber);
