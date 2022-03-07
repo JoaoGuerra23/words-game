@@ -16,16 +16,17 @@ public class ServerDispatch {
     private int playerCounter;
     private int portNumber;
 
-    public ServerDispatch(int portNumber, int nThreads, String filePath) {
+    public ServerDispatch(String portNumber, String nThreads, String filePath) {
 
         this.nThreads = Integer.valueOf(nThreads); //+1 because of server admin
+        this.portNumber = Integer.valueOf(portNumber);
         this.clientsList = new LinkedList<>();
         this.fixedPool = Executors.newFixedThreadPool(this.nThreads);
         this.grid = new Grid(filePath);
-        this.portNumber = Integer.valueOf(portNumber);
+
 
         try {
-            serverSocket = new ServerSocket(portNumber);
+            serverSocket = new ServerSocket(Integer.valueOf(portNumber));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -51,7 +52,6 @@ public class ServerDispatch {
         //Starts the Game
         start();
     }
-
 
 
     /**
@@ -118,7 +118,7 @@ public class ServerDispatch {
 
         for (int i = 10; i >= 0; i--) {
             try {
-                Thread.sleep(0); //TODO: Alterar de novo
+                Thread.sleep(1500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -138,8 +138,7 @@ public class ServerDispatch {
 
         //ReDraw the Matrix and send it to every1 again
         clearScreen();
-
-        clearScreenServer(); //TODO: ver se funciona
+        clearScreenServer();
 
         sendAll(String.valueOf(grid.drawMatrix()));
         sendAll("Chose and type a word from the given Matrix: ");
@@ -174,7 +173,7 @@ public class ServerDispatch {
                 return;
             }
             if (playerCounter <= 1) {
-                sendAll(drawWinner(client.getName())); //TODO: is it working now ?
+                sendAll(drawWinner(client.getName()));
                 sendAll(client.getName() + " is the survivor!");
                 System.out.println(client.getName() + " is the survivor!");
                 closeServer();
