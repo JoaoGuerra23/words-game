@@ -16,7 +16,7 @@ public class ServerDispatch {
     private int playerCounter;
     private int portNumber;
 
-    public ServerDispatch(String portNumber, String nThreads, String filePath) {
+    public ServerDispatch(int portNumber, int nThreads, String filePath) {
 
         this.nThreads = Integer.valueOf(nThreads); //+1 because of server admin
         this.portNumber = Integer.valueOf(portNumber);
@@ -109,7 +109,7 @@ public class ServerDispatch {
                 "    |   3. If you miss the word  |.\n" +
                 "    |      three times, you lose |.\n" +
                 "    |                            |.\n" +
-                "    |      GOOD LUCK             |.\n" +
+                "    |      READY YOUR FINGERS!   |.\n" +
                 "    |   _________________________|___\n" +
                 "    |  /                            /.\n" +
                 "    \\_/____________________________/.");
@@ -118,7 +118,7 @@ public class ServerDispatch {
 
         for (int i = 10; i >= 0; i--) {
             try {
-                Thread.sleep(1500);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -204,8 +204,6 @@ public class ServerDispatch {
 
         sendAll("Chose and type a word from the given Matrix: ");
     }
-
-
 
     //Other Methods
     public void checkPlayersInput(String str, Client client) {
@@ -312,7 +310,7 @@ public class ServerDispatch {
         //Inside grid will show the players as a number representing the lives they have left
 
         int cols = getClientList().size();
-        int rows = 6;
+        int rows = 7;
 
         //GRID:
         String[][] grid = new String[rows][cols];
@@ -326,47 +324,58 @@ public class ServerDispatch {
 
         //Add player data to grid:
         for (int j = 0; j < cols; j++) {
-            if (getClientList().get(j).getScore() >= 200) {
+            if (getClientList().get(j).getScore() >= 300) {
                 grid[0][j] = String.valueOf(getClientList().get(j).getLives());
 
-            } else if (getClientList().get(j).getScore() >= 150 && getClientList().get(j).getScore() < 200) {
+            } else if (getClientList().get(j).getScore() >= 200 && getClientList().get(j).getScore() < 300) {
                 grid[1][j] = String.valueOf(getClientList().get(j).getLives());
 
-            } else if (getClientList().get(j).getScore() >= 100 && getClientList().get(j).getScore() < 150) {
+            } else if (getClientList().get(j).getScore() >= 150 && getClientList().get(j).getScore() < 200) {
                 grid[2][j] = String.valueOf(getClientList().get(j).getLives());
 
-            } else if (getClientList().get(j).getScore() >= 50 && getClientList().get(j).getScore() < 100) {
+            } else if (getClientList().get(j).getScore() >= 100 && getClientList().get(j).getScore() < 150) {
                 grid[3][j] = String.valueOf(getClientList().get(j).getLives());
 
-            } else if (getClientList().get(j).getScore() >= 15 && getClientList().get(j).getScore() < 50) {
+            } else if (getClientList().get(j).getScore() >= 50 && getClientList().get(j).getScore() < 100) {
                 grid[4][j] = String.valueOf(getClientList().get(j).getLives());
 
-            } else if (getClientList().get(j).getScore() < 15) {
+            } else if (getClientList().get(j).getScore() >= 15 && getClientList().get(j).getScore() < 50) {
                 grid[5][j] = String.valueOf(getClientList().get(j).getLives());
+
+            } else if (getClientList().get(j).getScore() < 15) {
+                grid[6][j] = String.valueOf(getClientList().get(j).getLives());
             }
         }
 
         //Draw Grid:
-        System.out.println("** LIVE PLAYER SCORES **");
+        System.out.println("* * * LIVE PLAYER SCORES * * * \n");
 
+        System.out.print("Players Name::  ");
+        for(Client player : clientsList) {
+            System.out.print(player.getName().charAt(0) +""+ player.getName().charAt(1) + " ");
+        }
+        System.out.println("");
         for(int i = 0; i < rows; i++){
             switch (i){
                 case 0:
-                    System.out.print("P.Score > 200| ");
+                    System.out.print("P.Score > 300| ");
                     break;
                 case 1:
-                    System.out.print("P.Score > 150| ");
+                    System.out.print("P.Score > 200| ");
                     break;
                 case 2:
-                    System.out.print("P.Score > 100| ");
+                    System.out.print("P.Score > 150| ");
                     break;
                 case 3:
-                    System.out.print("P.Score >  50| ");
+                    System.out.print("P.Score > 100| ");
                     break;
                 case 4:
-                    System.out.print("P.Score >  30| ");
+                    System.out.print("P.Score >  50| ");
                     break;
                 case 5:
+                    System.out.print("P.Score >  30| ");
+                    break;
+                case 6:
                     System.out.print("P.Score >   0| ");
                     break;
             }
@@ -376,6 +385,7 @@ public class ServerDispatch {
             System.out.println(" |");
         }
     }
+
 
     /**
      * Send Messages to Players:

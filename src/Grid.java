@@ -160,10 +160,8 @@ public class Grid {
                     //If word equals to player input:
                     if (str.equals(trimmedWord)) {
 
-                        //score += trimmedWord.length();
                         score += trimmedWord.length();
                         wordMatrix[i][j] = "          ";
-
                     }
                 }
             }

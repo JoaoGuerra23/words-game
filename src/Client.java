@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Scanner;
 
 public class Client implements Runnable {
 
@@ -19,13 +20,13 @@ public class Client implements Runnable {
     private StringInputScanner question;
     private HashMap<String, String> adminAccount = new HashMap<>();
 
-    private boolean isReady;
     private String msg;
     private String username;
+    private String role;
     private int score;
     private int lives;
     private boolean isKicked;
-    private String role;
+    private boolean isReady;
 
     public Client(Socket socket, ServerDispatch serverDispatch) throws IOException {
         this.socket = socket;
@@ -65,42 +66,48 @@ public class Client implements Runnable {
 
     //Check Player Inputs
     private void checkPlayerInput() {
+        synchronized (this) {
 
-        try {
-            while (true) {
-                this.msg = in.readLine();
+            try {
+                while (true) {
+                    this.msg = in.readLine();
 
-                if (this.isKicked == true) this.closeEverything();
+                    if (this.isKicked == true) this.closeEverything();
 
-                if (getIsReady()) {
-                    if (this.msg.equals("")) {
-                    } else if (this.msg.equals("/start")) {
-                        serverDispatch.sendPrivateWarning(("[INFO] You are already in gamemode."), username);
-                    } else if (this.msg.equals("/pm")) {
-                        serverDispatch.sendPrivateWarning(("[INFO] LO_oL ... really? No PM in this stage."), username);
+                    if (getIsReady()) {
+                        if (this.msg.equals("")) {
+                        } else if (this.msg.equals("/start")) {
+                            serverDispatch.sendPrivateWarning(("[INFO] You are already in gamemode."), username);
+                        } else if (this.msg.equals("/pm")) {
+                            serverDispatch.sendPrivateWarning(("[INFO] LO_oL ... really? No PM in this stage."), username);
+                        } else {
+                            serverDispatch.receivePlayerMessage(this.msg, this);
+                        }
                     } else {
-                        serverDispatch.receivePlayerMessage(this.msg, this);
-                    }
-                } else {
-                    if (msg.equals("/pm")) {
-                        sendPrivateMessage(this.prompt);
-                    } else if (this.msg.equals("/start")) {
-                        serverDispatch.sendChatMessage(("[INFO] " + this.username + " typed /start to start the game!"), this.username);
-                        serverDispatch.sendPrivateWarning(("[INFO] Waiting for other players"), this.username);
-                        setReady(true);
-                    } else if (this.msg.equals("")) {
-                        serverDispatch.sendPrivateWarning("[INFO] No SPAM!!", this.username);
-                    } else {
-                        serverDispatch.sendChatMessage(("[" + this.username + "]" + ": " + this.msg), this.username);
-                        System.out.println(Colors.BLUE_BRIGHT + "[" + this.username + "]" + ":" + Colors.RESET + " " + this.msg);
+                        if (msg.equals("/pm")) {
+                            sendPrivateMessage(this.prompt);
+
+                        } else if (this.msg.equals("/start")) {
+                            serverDispatch.sendChatMessage(("[INFO] " + this.username + " typed /start to start the game! Join him!"), this.username);
+                            serverDispatch.sendPrivateWarning(("[INFO] Waiting for other players"), this.username);
+                            setReady(true);
+
+                        } else if (this.msg.equals("")) {
+                            serverDispatch.sendPrivateWarning("[INFO] No SPAM!!", this.username);
+
+                        } else if (this.msg.equals("/list")) {
+                            listMenu();
+
+                        } else {
+                            serverDispatch.sendChatMessage(("[" + this.username + "]" + ": " + this.msg), this.username);
+                            System.out.println(Colors.BLUE_BRIGHT + "[" + this.username + "]" + ":" + Colors.RESET + " " + this.msg);
+                        }
                     }
                 }
-                continue;
+            } catch (IOException e) {
+                closeEverything();
+                return;
             }
-        } catch (IOException e) {
-            out.close();
-        } finally {
-            closeEverything();
         }
     }
 
@@ -117,7 +124,7 @@ public class Client implements Runnable {
 
         if (adminAccount.get("admin").equals(pass)) {
             System.out.println("[SERVER]: An Admin is present!");
-            serverDispatch.sendAll("[SERVER]: An admin just showed up!");
+            serverDispatch.sendAll("[SERVER]: An admin just showed up!\n");
             this.role = "admin";
             adminMenu();
         } else {
@@ -135,52 +142,21 @@ public class Client implements Runnable {
                 this.msg = in.readLine();
 
                 if (this.msg.equals("/kick")) {
-
-                    LinkedList<String> players = new LinkedList<>();
-                    for (Client c : serverDispatch.getClientList()) {
-                        if (!c.getName().equals("admin") && !c.isKicked) players.offer(c.getName());
-                    }
-
-                    String[] playersList = new String[players.size()];
-                    for (int i = 0; i < players.size(); i++) {
-                        playersList[i] = players.get(i);
-                    }
-
-                    MenuInputScanner scanner = new MenuInputScanner(playersList);
-                    scanner.setMessage("Users Available: ");
-                    int answerIndex = prompt.getUserInput(scanner);
-
-                    StringInputScanner kickMessageMenu = new StringInputScanner();
-                    kickMessageMenu.setMessage("Write your message to player:\n");
-                    String kickMessage = prompt.getUserInput(kickMessageMenu);
-
-                    System.out.println(Colors.RED_BOLD_BRIGHT + "[KICK] Player: " + Colors.RESET + playersList[answerIndex - 1] + Colors.RED_BOLD_BRIGHT + " Reason: " + Colors.RESET + kickMessage); //Blocking
-                    serverDispatch.sendPrivateWarning((Colors.RED_BOLD_BRIGHT + "[SYSTEM]: " + Colors.RESET + "You were Kicked! " + Colors.RED_BOLD_BRIGHT + "Reason:" + Colors.RESET + kickMessage), playersList[answerIndex - 1]);
-                    serverDispatch.sendChatMessage(Colors.RED_BOLD_BRIGHT + "[KICK] Player: " + Colors.RESET + playersList[answerIndex - 1] + Colors.RED_BOLD_BRIGHT + " Reason: " + Colors.RESET + kickMessage, username); //Blocking
-
-                    for (Client cl : serverDispatch.getClientList()) {
-                        if (cl.getName() == playersList[answerIndex - 1]) {
-                            cl.setIsKicked(true);
-                            cl.setReady(true);
-                        }
-                    }
-                    serverDispatch.sendPrivateWarning("[SERVER]: Player " + playersList[answerIndex - 1] + " Kicked!", username);
+                    kickMenu();
                     continue;
+
                 } else if (this.msg.equals("/list")) {
-                    StringBuilder sb = new StringBuilder();
-
-                    for (Client c : serverDispatch.getClientList()) {
-                        if (!c.getName().equals(username) && !c.isKicked) {
-                            sb.append(". " + c.getName() + " :: Score: " + c.getScore() + " :: Lives: " + c.getLives() + " :: setReadY: " + c.getIsReady() + "\n");
-                        }
-                    }
-
-                    serverDispatch.sendPrivateWarning(String.valueOf(sb), username);
+                    listMenu();
                     continue;
-                } else if (this.msg.equals("/start"))
-                    serverDispatch.sendPrivateWarning("[INFO]: Admin Role not allowed to play", username);
-                serverDispatch.sendChatMessage((Colors.RED_BOLD_BRIGHT + "[ADMIN]: " + Colors.RESET + this.msg), this.username);
-                System.out.println(Colors.RED_BOLD_BRIGHT + "[ADMIN]: " + Colors.RESET + this.msg);
+
+                } else if (this.msg.equals("/start")) {
+                    setReady(true); //If Admin make "/start" the game will start for every1.
+                } else if (this.msg.equals("/pm")) {
+                    sendPrivateMessage(this.prompt);
+                } else {
+                    serverDispatch.sendChatMessage((Colors.RED_BOLD_BRIGHT + "[ADMIN]: " + Colors.RESET + this.msg), this.username);
+                    System.out.println(Colors.RED_BOLD_BRIGHT + "[ADMIN]: " + Colors.RESET + this.msg);
+                }
             }
         } catch (IOException e) {
             out.close();
@@ -189,40 +165,94 @@ public class Client implements Runnable {
         }
     }
 
+    public void kickMenu() {
+
+        LinkedList<String> players = new LinkedList<>();
+        for (Client c : serverDispatch.getClientList()) {
+            if (!c.getName().equals("admin") && !c.isKicked) players.offer(c.getName());
+        }
+
+        String[] playersList = new String[players.size()];
+        for (int i = 0; i < players.size(); i++) {
+            playersList[i] = players.get(i);
+        }
+
+        MenuInputScanner scanner = new MenuInputScanner(playersList);
+        scanner.setMessage("Users Available: ");
+        int answerIndex = prompt.getUserInput(scanner);
+
+        StringInputScanner kickMessageMenu = new StringInputScanner();
+        kickMessageMenu.setMessage("Write your message to player:\n");
+        String kickMessage = prompt.getUserInput(kickMessageMenu);
+
+        System.out.println(Colors.RED_BOLD_BRIGHT + "[KICK] Player: " + Colors.RESET + playersList[answerIndex - 1] + Colors.RED_BOLD_BRIGHT + " Reason: " + Colors.RESET + kickMessage); //Blocking
+        serverDispatch.sendPrivateWarning((Colors.RED_BOLD_BRIGHT + "[SYSTEM]: " + Colors.RESET + "You were Kicked! " + Colors.RED_BOLD_BRIGHT + "Reason:" + Colors.RESET + kickMessage), playersList[answerIndex - 1]);
+        serverDispatch.sendChatMessage(Colors.RED_BOLD_BRIGHT + "[KICK] Player: " + Colors.RESET + playersList[answerIndex - 1] + Colors.RED_BOLD_BRIGHT + " Reason: " + Colors.RESET + kickMessage, username); //Blocking
+
+        for (Client cl : serverDispatch.getClientList()) {
+            if (cl.getName() == playersList[answerIndex - 1]) {
+                cl.setIsKicked(true);
+                cl.setReady(true);
+            }
+        }
+        serverDispatch.sendPrivateWarning("[SERVER]: Player " + playersList[answerIndex - 1] + " Kicked!", username);
+
+    }
+
+    public void listMenu() {
+        StringBuilder sb = new StringBuilder();
+
+        for (Client c : serverDispatch.getClientList()) {
+            //Wont show the player kicked nor admins
+            if (!c.isKicked && !c.getRole().equals("admin")) {
+                sb.append(". " + c.getName() + " :: Score: " + c.getScore() + " :: Lives: " + c.getLives() + " :: setReadY: " + c.getIsReady() + "\n");
+            }
+        }
+
+        serverDispatch.sendPrivateWarning(String.valueOf(sb), username);
+    }
+
+    public void setReady() {
+
+
+    }
+
     //Send Messages:
     public void send(String str) {
         out.println(str);
     }
 
     public void sendPrivateMessage(Prompt prompt) {
+        synchronized (this) {
 
-        String[] strArray = new String[serverDispatch.getClientList().size() - 1];
-        LinkedList<String> usersList = new LinkedList<>();
+            String[] strArray = new String[serverDispatch.getClientList().size() - 1];
+            LinkedList<String> usersList = new LinkedList<>();
 
-        //Had to add the users to a Linked List first due to bad index management.
-        for (Client client : serverDispatch.getClientList()) {
-            if (!client.getName().equals(username)) {
-                usersList.add(client.getName());
+            //Had to add the users to a Linked List first due to bad index management.
+            for (Client client : serverDispatch.getClientList()) {
+                if (!client.getName().equals(username)) {
+                    usersList.add(client.getName());
+                }
             }
+
+            //Add to array list because Menu only accepts arrays not linkedlists
+            for (int i = 0; i < usersList.size(); i++) {
+                strArray[i] = usersList.get(i);
+            }
+
+            MenuInputScanner scanner = new MenuInputScanner(strArray);
+            scanner.setMessage("Users Available: ");
+
+            int answerIndex = prompt.getUserInput(scanner);
+
+            StringInputScanner personalMessage = new StringInputScanner();
+            personalMessage.setMessage("Write your message to player:\n");
+            String personalM = "[PM] " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
+            serverDispatch.sendPrivateWarning(("PM sent."), username);
+            System.out.println("[INFO]" + username + ": is having a private chat with " + usersList.get(answerIndex - 1) + "." + Colors.PURPLE_BOLD_BRIGHT + " Who knows what ... " + Colors.RESET);
+
+            serverDispatch.sendPrivateWarning(personalM, usersList.get(answerIndex - 1));
         }
-
-        //Add to array list because Menu only accepts arrays not linkedlists
-        for (int i = 0; i < usersList.size(); i++) {
-            strArray[i] = usersList.get(i);
-        }
-
-        MenuInputScanner scanner = new MenuInputScanner(strArray);
-        scanner.setMessage("Users Available: ");
-
-        int answerIndex = prompt.getUserInput(scanner);
-
-        StringInputScanner personalMessage = new StringInputScanner();
-        personalMessage.setMessage("Write your message to player:\n");
-        String personalM = "[PM] " + username + ": " + prompt.getUserInput(personalMessage); //Blocking
-        serverDispatch.sendPrivateWarning(("PM sent."), username);
-        System.out.println("[INFO]" + username + ": is having a private chat with " + usersList.get(answerIndex - 1) + "." + Colors.PURPLE_BOLD_BRIGHT + " Who knows what ... " + Colors.RESET);
-
-        serverDispatch.sendPrivateWarning(personalM, usersList.get(answerIndex - 1));
     }
 
     public void sendRules(String str) {
@@ -266,13 +296,10 @@ public class Client implements Runnable {
         }
     }
 
-    private void setName() {
+    private synchronized void setName() {
 
         question.setMessage("Set your nickname:\n");
-
-        synchronized(this) {
-            this.username = prompt.getUserInput(question);
-        }
+        this.username = prompt.getUserInput(question);
 
         if (username.equals("admin")) {
             adminLogin();
