@@ -7,25 +7,25 @@ import java.util.concurrent.Executors;
 
 public class ServerDispatch {
 
-    private LinkedList<Client> clientsList;
-    private ExecutorService fixedPool;
+    private final LinkedList<Client> clientsList;
+    private final ExecutorService fixedPool;
     private ServerSocket serverSocket;
     private Client client;
-    private int nThreads;
-    private final int portNumber;
+    private final int nThreads;
     private final Grid grid;
     private int playerCounter;
+    private int portNumber;
 
-    public ServerDispatch(String portNumber, String nThreads, String filePath) {
+    public ServerDispatch(int portNumber, int nThreads, String filePath) {
 
-        this.nThreads = Integer.valueOf(nThreads);
-        this.portNumber = Integer.valueOf(portNumber);
+        this.nThreads = Integer.valueOf(nThreads); //+1 because of server admin
         this.clientsList = new LinkedList<>();
         this.fixedPool = Executors.newFixedThreadPool(this.nThreads);
         this.grid = new Grid(filePath);
+        this.portNumber = Integer.valueOf(portNumber);
 
         try {
-            serverSocket = new ServerSocket(this.portNumber);
+            serverSocket = new ServerSocket(portNumber);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -35,6 +35,7 @@ public class ServerDispatch {
     public void init() throws IOException {
 
         System.out.println("SERVER IS ONLINE - Waiting For playing connections");
+        System.out.println("PORT: " + portNumber);
 
         //Must have all the players connected to start the game
         while (clientsList.size() < nThreads) {
@@ -51,22 +52,24 @@ public class ServerDispatch {
         start();
     }
 
+
+
     /**
      * Game Logics Start here:
      */
-
     public void start() {
 
         while (!checkIfAllReady()) {
         }
 
-        sendServerMessage("All Players are Ready: Game will Start:");
+        sendServerMessage("[INFO]: All Players Ready. Game starting");
         System.out.println("SERVER: Game is now Starting");
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
         briefSummary();
 
     }
@@ -76,16 +79,13 @@ public class ServerDispatch {
         int counter = 0;
 
         for (Client client : clientsList) {
+            if(client.getRole().equals("admin")) counter ++;
 
-            if (client.getIsReady()) {
-                counter++;
-            }
+            if (client.getIsReady()) counter++;
         }
 
         if (counter == clientsList.size()) {
-
             return true;
-
         }
         return false;
     }
@@ -118,7 +118,7 @@ public class ServerDispatch {
 
         for (int i = 10; i >= 0; i--) {
             try {
-                Thread.sleep(1500);
+                Thread.sleep(0); //TODO: Alterar de novo
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -138,6 +138,9 @@ public class ServerDispatch {
 
         //ReDraw the Matrix and send it to every1 again
         clearScreen();
+
+        clearScreenServer(); //TODO: ver se funciona
+
         sendAll(String.valueOf(grid.drawMatrix()));
         sendAll("Chose and type a word from the given Matrix: ");
 
@@ -154,6 +157,7 @@ public class ServerDispatch {
 
             //Redraw the Matrix
             clearScreen();
+            clearScreenServer();
             sendAll(String.valueOf(grid.drawMatrix()));
 
             //Get Player Score and Lives and Show it in Console
@@ -172,6 +176,7 @@ public class ServerDispatch {
             if (playerCounter <= 1) {
                 sendAll(drawWinner(client.getName())); //TODO: is it working now ?
                 sendAll(client.getName() + " is the survivor!");
+                System.out.println(client.getName() + " is the survivor!");
                 closeServer();
                 return;
             }
@@ -201,6 +206,9 @@ public class ServerDispatch {
         sendAll("Chose and type a word from the given Matrix: ");
     }
 
+
+
+    //Other Methods
     public void checkPlayersInput(String str, Client client) {
         synchronized (this) {
 
@@ -215,6 +223,158 @@ public class ServerDispatch {
                 client.setLives();
                 return;
             }
+        }
+    }
+
+    public void receivePlayerMessage(String msg, Client client) {
+        sendAll(client.getName() + ": " + msg);
+        playGame(msg, client);
+    }
+
+    public void closeServer() {
+
+        sendAll("End Game!");
+
+        client.closeEverything();
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.exit(0);
+    }
+
+    public void clearScreen() {
+
+        sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+
+        sendAll("\n" +
+                "\n" +
+                " __          __           _        _____                      \n" +
+                " \\ \\        / /          | |      / ____|                     \n" +
+                "  \\ \\  /\\  / /__  _ __ __| |___  | |  __  __ _ _ __ ___   ___ \n" +
+                "   \\ \\/  \\/ / _ \\| '__/ _` / __| | | |_ |/ _` | '_ ` _ \\ / _ \\\n" +
+                "    \\  /\\  / (_) | | | (_| \\__ \\ | |__| | (_| | | | | | |  __/\n" +
+                "     \\/  \\/ \\___/|_|  \\__,_|___/  \\_____|\\__,_|_| |_| |_|\\___|\n" +
+                "                                                              \n" +
+                "                                                              \n" +
+                "\n");
+
+    }
+
+    public void clearScreenServer(){
+
+        System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+
+        System.out.println("\n" +
+                "\n" +
+                " __          __           _        _____                      \n" +
+                " \\ \\        / /          | |      / ____|                     \n" +
+                "  \\ \\  /\\  / /__  _ __ __| |___  | |  __  __ _ _ __ ___   ___ \n" +
+                "   \\ \\/  \\/ / _ \\| '__/ _` / __| | | |_ |/ _` | '_ ` _ \\ / _ \\\n" +
+                "    \\  /\\  / (_) | | | (_| \\__ \\ | |__| | (_| | | | | | |  __/\n" +
+                "     \\/  \\/ \\___/|_|  \\__,_|___/  \\_____|\\__,_|_| |_| |_|\\___|\n" +
+                "\n");
+
+        playersRunningScores();
+
+    }
+
+    public String drawWinner(String userName) {
+        return
+                "    -----------------\n" +
+                        "    |@@@@|     |####|\n" +
+                        "    |@@@@|     |####|\n" +
+                        "    |@@@@|     |####|\n" +
+                        "     |@@@|     |###|\n" +
+                        "      |@@|     |##|\n" +
+                        "      `@@|_____|##'\n" +
+                        "           (O)\n" +
+                        "        .-'''''-.\n" +
+                        "      .'  * * *  `.\n" +
+                        "     :  *       *  :\n" +
+                        "          " + userName + "\n" +
+                        "     :~           ~:\n" +
+                        "     :  *       *  :\n" +
+                        "      `.  * * *  .'\n" +
+                        "        `-.....-'\n";
+    }
+
+    public LinkedList<Client> getClientList() {
+        return this.clientsList;
+    }
+
+    private void playersRunningScores() {
+
+        //Design the grid rows, cols. cols = players qty. rows = scores by levels
+        //Inside grid will show the players as a number representing the lives they have left
+
+        int cols = getClientList().size();
+        int rows = 6;
+
+        //GRID:
+        String[][] grid = new String[rows][cols];
+
+        //Fill the grid first
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                grid[i][j] = " ";
+            }
+        }
+
+        //Add player data to grid:
+        for (int j = 0; j < cols; j++) {
+            if (getClientList().get(j).getScore() >= 200) {
+                grid[0][j] = String.valueOf(getClientList().get(j).getLives());
+
+            } else if (getClientList().get(j).getScore() >= 150 && getClientList().get(j).getScore() < 200) {
+                grid[1][j] = String.valueOf(getClientList().get(j).getLives());
+
+            } else if (getClientList().get(j).getScore() >= 100 && getClientList().get(j).getScore() < 150) {
+                grid[2][j] = String.valueOf(getClientList().get(j).getLives());
+
+            } else if (getClientList().get(j).getScore() >= 50 && getClientList().get(j).getScore() < 100) {
+                grid[3][j] = String.valueOf(getClientList().get(j).getLives());
+
+            } else if (getClientList().get(j).getScore() >= 15 && getClientList().get(j).getScore() < 50) {
+                grid[4][j] = String.valueOf(getClientList().get(j).getLives());
+
+            } else if (getClientList().get(j).getScore() < 15) {
+                grid[5][j] = String.valueOf(getClientList().get(j).getLives());
+            }
+        }
+
+        //Draw Grid:
+        System.out.println("** LIVE PLAYER SCORES **");
+
+        for(int i = 0; i < rows; i++){
+            switch (i){
+                case 0:
+                    System.out.print("P.Score > 200| ");
+                    break;
+                case 1:
+                    System.out.print("P.Score > 150| ");
+                    break;
+                case 2:
+                    System.out.print("P.Score > 100| ");
+                    break;
+                case 3:
+                    System.out.print("P.Score >  50| ");
+                    break;
+                case 4:
+                    System.out.print("P.Score >  30| ");
+                    break;
+                case 5:
+                    System.out.print("P.Score >   0| ");
+                    break;
+            }
+            for (int j = 0; j < cols ; j++) {
+                System.out.print("[" + grid[i][j] + "]");
+            }
+            System.out.println(" |");
         }
     }
 
@@ -253,11 +413,6 @@ public class ServerDispatch {
         }
     }
 
-    public void receivePlayerMessage(String msg, Client client) {
-        sendAll(client.getName() + ": " + msg);
-        playGame(msg, client);
-    }
-
     public void sendPrivateWarning(String msg, String username) {
 
         for (Client client : clientsList) {
@@ -267,62 +422,5 @@ public class ServerDispatch {
             }
         }
 
-    }
-
-    public void closeServer() {
-
-        sendAll("End Game!");
-
-        client.closeEverything();
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        System.exit(0);
-    }
-
-    public void clearScreen() {
-
-        sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-        sendAll("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-
-        sendAll("\n" +
-                "\n" +
-                " __          __           _        _____                      \n" +
-                " \\ \\        / /          | |      / ____|                     \n" +
-                "  \\ \\  /\\  / /__  _ __ __| |___  | |  __  __ _ _ __ ___   ___ \n" +
-                "   \\ \\/  \\/ / _ \\| '__/ _` / __| | | |_ |/ _` | '_ ` _ \\ / _ \\\n" +
-                "    \\  /\\  / (_) | | | (_| \\__ \\ | |__| | (_| | | | | | |  __/\n" +
-                "     \\/  \\/ \\___/|_|  \\__,_|___/  \\_____|\\__,_|_| |_| |_|\\___|\n" +
-                "                                                              \n" +
-                "                                                              \n" +
-                "\n");
-
-    }
-
-    public String drawWinner(String userName) {
-        return
-                "    -----------------\n" +
-                        "    |@@@@|     |####|\n" +
-                        "    |@@@@|     |####|\n" +
-                        "    |@@@@|     |####|\n" +
-                        "     |@@@|     |###|\n" +
-                        "      |@@|     |##|\n" +
-                        "      `@@|_____|##'\n" +
-                        "           (O)\n" +
-                        "        .-'''''-.\n" +
-                        "      .'  * * *  `.\n" +
-                        "     :  *       *  :\n" +
-                        "          " + userName + "\n" +
-                        "     :~           ~:\n" +
-                        "     :  *       *  :\n" +
-                        "      `.  * * *  .'\n" +
-                        "        `-.....-'\n";
-    }
-
-    public LinkedList<Client> getClientList() {
-        return this.clientsList;
     }
 }
