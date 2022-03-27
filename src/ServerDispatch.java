@@ -18,7 +18,7 @@ public class ServerDispatch {
 
     public ServerDispatch(int portNumber, int nThreads, String filePath) {
 
-        this.nThreads = Integer.valueOf(nThreads); //+1 because of server admin
+        this.nThreads = Integer.valueOf(nThreads);
         this.portNumber = Integer.valueOf(portNumber);
         this.clientsList = new LinkedList<>();
         this.fixedPool = Executors.newFixedThreadPool(this.nThreads);
@@ -35,8 +35,8 @@ public class ServerDispatch {
 
     public void init() throws IOException {
 
-        System.out.println("SERVER IS ONLINE - Waiting For playing connections");
-        System.out.println("PORT: " + portNumber);
+        System.out.println(Messages.INFO_SERVER_ON);
+        System.out.println(Messages.INFO_PORT + portNumber);
 
         //Must have all the players connected to start the game
         while (clientsList.size() < nThreads) {
@@ -44,15 +44,15 @@ public class ServerDispatch {
             Socket clientSocket = serverSocket.accept();
             client = new Client(clientSocket, this); //Blocking statement
             clientsList.add(client);
-            System.out.println("SERVER: New Client connected (" + clientsList.size() + ")");
+            System.out.println(Messages.INFO_NEWCONNECTION + clientsList.size());
 
             //Added the Thread to pull and started();
             fixedPool.submit(client);
+
         }
         //Starts the Game
         start();
     }
-
 
     /**
      * Game Logics Start here:
@@ -60,18 +60,18 @@ public class ServerDispatch {
     public void start() {
 
         while (!checkIfAllReady()) {
+            System.out.print("");
         }
 
-        sendServerMessage("[INFO]: All Players Ready. Game starting");
-        System.out.println("SERVER: Game is now Starting");
+        sendServerMessage(Messages.INFO_GAMESTARTING);
+        System.out.println(Messages.INFO_GAMESTARTING);
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         briefSummary();
-
     }
 
     public boolean checkIfAllReady() {
@@ -79,10 +79,10 @@ public class ServerDispatch {
         int counter = 0;
 
         for (Client client : clientsList) {
-            if(client.getRole().equals("admin")) counter ++;
 
             if (client.getIsReady()) counter++;
         }
+
 
         if (counter == clientsList.size()) {
             return true;
@@ -141,69 +141,67 @@ public class ServerDispatch {
         clearScreenServer();
 
         sendAll(String.valueOf(grid.drawMatrix()));
-        sendAll("Chose and type a word from the given Matrix: ");
+        sendAll(Messages.INFO_CHOOSEWORD);
 
-        //Must be here. Cannot be in constructor, otherwise wont work.
+        //Must be here. Cannot be in constructor, otherwise won't work.
         this.playerCounter = clientsList.size();
 
     }
 
     public void playGame(String msg, Client client) {
-        synchronized (this) {
+        //Check player Input
+        checkPlayersInput(msg, client);
 
-            //Check player Input
-            checkPlayersInput(msg, client);
+        //Redraw the Matrix
+        clearScreen();
+        clearScreenServer();
+        sendAll(String.valueOf(grid.drawMatrix()));
 
-            //Redraw the Matrix
-            clearScreen();
-            clearScreenServer();
-            sendAll(String.valueOf(grid.drawMatrix()));
+        //Get Player Score and Lives and Show it in Console
+        sendPrivateWarning(("Lives: " + String.valueOf(client.getLives()) + " ~ Personal Score: " + String.valueOf(client.getScore())), client);
 
-            //Get Player Score and Lives and Show it in Console
-            sendPrivateWarning(("Lives: " + String.valueOf(client.getLives()) + " ~ Personal Score: " + String.valueOf(client.getScore())), client.getName());
+        //Check If there are still words available && if Player Lost && if only 1 player playing && if there is a Draw!
+        if (client.getLives() == 0) {
+            sendPrivateWarning("[INFO] You Lost the Game!", client);
 
-            //Check If there are still words available && if Player Lost && if only 1 player playing && if there is a Draw!
-            if (client.getLives() == 0) {
-                sendPrivateWarning("You Lost the Game!", client.getName());
+            playerCounter -= 1; //
 
-                playerCounter -= 1; //
-
-                sendChatMessage((client.getName() + " Lost the game and got out! " + playerCounter + " players left!"), client.getName());
-                client.closeEverything();
-                return;
-            }
-            if (playerCounter <= 1) {
-                sendAll(drawWinner(client.getName()));
-                sendAll(client.getName() + " is the survivor!");
-                System.out.println(client.getName() + " is the survivor!");
-                closeServer();
-                return;
-            }
-
-            //If there is a draw:
-            if (grid.checkRemainingWords()) {
-
-                String playerWinner = "";
-                int maxScore = 0;
-
-                for (Client c : clientsList) {
-                    if (c.getSocket().isConnected()) {
-                        if (c.getScore() > maxScore) {
-                            maxScore = c.getScore();
-                            playerWinner = c.getName();
-                        }
-                    }
-                }
-
-                sendAll(playerWinner + " wins the game with a total Score amount of " + maxScore);
-                sendAll(drawWinner(playerWinner));
-
-                closeServer();
-            }
+            sendChatMessage(("[INFO] " + client.getName() + " Lost the game and got out! " + playerCounter + " players left!"), client.getName());
+            client.closeEverything();
+            return;
+        }
+        if (playerCounter <= 1) {
+            sendAll(drawWinner(client.getName()));
+            sendAll("[INFO] " + client.getName() + " is the survivor!");
+            System.out.println("[INFO] " + client.getName() + " is the survivor!");
+            closeServer();
+            return;
         }
 
-        sendAll("Chose and type a word from the given Matrix: ");
+        //If there is a draw:
+        if (grid.checkRemainingWords()) {
+
+            String playerWinner = "";
+            int maxScore = 0;
+
+            for (Client c : clientsList) {
+                if (c.getSocket().isConnected()) {
+                    if (c.getScore() > maxScore) {
+                        maxScore = c.getScore();
+                        playerWinner = c.getName();
+                    }
+                }
+            }
+
+            sendAll("[INFO] " + playerWinner + " wins the game with a total Score amount of " + maxScore);
+            sendAll(drawWinner(playerWinner));
+
+            closeServer();
+        }
+        sendAll(Messages.INFO_CHOOSEWORD);
+
     }
+
 
     //Other Methods
     public void checkPlayersInput(String str, Client client) {
@@ -214,23 +212,22 @@ public class ServerDispatch {
             //This will set the player score
             client.setScore(score);
 
-            //Check if Player Missed the Word:
-            if (score == 0) {
-                sendPrivateWarning("You missed!", client.getName());
-                client.setLives();
-                return;
-            }
+            //Check if Player Missed the Word and decrement 1 live
+            if (score == 0) client.setLives();
+
         }
     }
 
     public void receivePlayerMessage(String msg, Client client) {
+
         sendAll(client.getName() + ": " + msg);
         playGame(msg, client);
+
     }
 
     public void closeServer() {
 
-        sendAll("End Game!");
+        sendAll(Messages.INFO_ENDGAME);
 
         client.closeEverything();
         try {
@@ -261,7 +258,7 @@ public class ServerDispatch {
 
     }
 
-    public void clearScreenServer(){
+    public void clearScreenServer() {
 
         System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
         System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
@@ -351,12 +348,12 @@ public class ServerDispatch {
         System.out.println("* * * LIVE PLAYER SCORES * * * \n");
 
         System.out.print("Players Name::  ");
-        for(Client player : clientsList) {
-            System.out.print(player.getName().charAt(0) +""+ player.getName().charAt(1) + " ");
+        for (Client player : clientsList) {
+            System.out.print(player.getName().charAt(0) + "" + player.getName().charAt(1) + " ");
         }
         System.out.println("");
-        for(int i = 0; i < rows; i++){
-            switch (i){
+        for (int i = 0; i < rows; i++) {
+            switch (i) {
                 case 0:
                     System.out.print("P.Score > 300| ");
                     break;
@@ -379,7 +376,7 @@ public class ServerDispatch {
                     System.out.print("P.Score >   0| ");
                     break;
             }
-            for (int j = 0; j < cols ; j++) {
+            for (int j = 0; j < cols; j++) {
                 System.out.print("[" + grid[i][j] + "]");
             }
             System.out.println(" |");
@@ -422,14 +419,15 @@ public class ServerDispatch {
         }
     }
 
-    public void sendPrivateWarning(String msg, String username) {
+    public void sendPrivateWarning(String msg, Client clientObj) {
 
         for (Client client : clientsList) {
 
-            if (client.getName().equals(username)) {
+            if (client.equals(clientObj)) {
                 client.send(msg);
             }
         }
 
     }
+
 }
